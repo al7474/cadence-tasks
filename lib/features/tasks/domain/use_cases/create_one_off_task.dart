@@ -1,0 +1,35 @@
+import 'package:cadence_tasks/core/domain/local_date.dart';
+import 'package:cadence_tasks/core/domain/local_time.dart';
+import 'package:cadence_tasks/core/domain/result.dart';
+import 'package:cadence_tasks/features/tasks/domain/one_off_task.dart';
+import 'package:cadence_tasks/features/tasks/domain/repositories/one_off_task_repository.dart';
+
+final class CreateOneOffTask {
+  const CreateOneOffTask(this._repository);
+
+  final OneOffTaskRepository _repository;
+
+  Future<Result<Unit>> execute({
+    required String id,
+    required String title,
+    required LocalDate scheduledDate,
+    LocalTime? scheduledTime,
+    bool reminderEnabled = false,
+    String? notes,
+  }) {
+    final result = OneOffTask.create(
+      id: id,
+      title: title,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      reminderEnabled: reminderEnabled,
+      notes: notes,
+    );
+
+    return switch (result) {
+      FailureResult<OneOffTask>(:final failure) =>
+        Future<Result<Unit>>.value(FailureResult<Unit>(failure)),
+      Success<OneOffTask>(:final value) => _repository.save(value),
+    };
+  }
+}
