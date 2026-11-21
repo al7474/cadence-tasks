@@ -5,5 +5,7 @@ import 'package:cadence_tasks/features/tasks/domain/one_off_task.dart';
 abstract interface class OneOffTaskRepository {
   Future<Result<Unit>> save(OneOffTask task);
 
+  Future<Result<Unit>> delete(String taskId);
+
   Future<Result<List<OneOffTask>>> getScheduledFor(LocalDate date);
 }

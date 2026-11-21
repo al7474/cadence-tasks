@@ -9,7 +9,7 @@ final class CreateOneOffTask {
 
   final OneOffTaskRepository _repository;
 
-  Future<Result<Unit>> execute({
+  Future<Result<OneOffTask>> execute({
     required String id,
     required String title,
     required LocalDate scheduledDate,
@@ -28,8 +28,16 @@ final class CreateOneOffTask {
 
     return switch (result) {
       FailureResult<OneOffTask>(:final failure) =>
-        Future<Result<Unit>>.value(FailureResult<Unit>(failure)),
-      Success<OneOffTask>(:final value) => _repository.save(value),
+        Future<Result<OneOffTask>>.value(FailureResult<OneOffTask>(failure)),
+      Success<OneOffTask>(:final value) => _save(value),
+    };
+  }
+
+  Future<Result<OneOffTask>> _save(OneOffTask task) async {
+    final result = await _repository.save(task);
+    return switch (result) {
+      Success<Unit>() => Success<OneOffTask>(task),
+      FailureResult<Unit>(:final failure) => FailureResult<OneOffTask>(failure),
     };
   }
 }

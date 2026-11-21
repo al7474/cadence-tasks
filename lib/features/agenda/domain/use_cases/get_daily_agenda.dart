@@ -12,8 +12,8 @@ final class GetDailyAgenda {
   const GetDailyAgenda({
     required DailyAgendaRepository repository,
     DailyAgendaBuilder builder = const DailyAgendaBuilder(),
-  })  : _repository = repository,
-        _builder = builder;
+  }) : _repository = repository,
+       _builder = builder;
 
   final DailyAgendaRepository _repository;
   final DailyAgendaBuilder _builder;

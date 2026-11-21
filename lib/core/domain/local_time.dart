@@ -6,10 +6,7 @@ final class LocalTime implements Comparable<LocalTime> {
 
   final int minutesSinceMidnight;
 
-  static Result<LocalTime> create({
-    required int hour,
-    required int minute,
-  }) {
+  static Result<LocalTime> create({required int hour, required int minute}) {
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
       return const FailureResult<LocalTime>(
         ValidationFailure('The time must be between 00:00 and 23:59.'),
@@ -50,6 +47,7 @@ final class LocalTime implements Comparable<LocalTime> {
   int get hashCode => minutesSinceMidnight.hashCode;
 
   @override
-  String toString() => '${hour.toString().padLeft(2, '0')}:'
+  String toString() =>
+      '${hour.toString().padLeft(2, '0')}:'
       '${minute.toString().padLeft(2, '0')}';
 }

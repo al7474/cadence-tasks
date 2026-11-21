@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "routineTemplates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "updatedAtUtcMillis",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mutationId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "routineOccurrenceLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "updatedAtUtcMillis",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mutationId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "oneOffTasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "updatedAtUtcMillis",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mutationId",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

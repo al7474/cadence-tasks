@@ -68,16 +68,19 @@ final class LocalDate implements Comparable<LocalDate> {
   }
 
   int daysSince(LocalDate other) {
-    return DateTime.utc(year, month, day)
-        .difference(DateTime.utc(other.year, other.month, other.day))
-        .inDays;
+    return DateTime.utc(
+      year,
+      month,
+      day,
+    ).difference(DateTime.utc(other.year, other.month, other.day)).inDays;
   }
 
   bool isBefore(LocalDate other) => compareTo(other) < 0;
 
   bool isAfter(LocalDate other) => compareTo(other) > 0;
 
-  String get iso8601 => '${year.toString().padLeft(4, '0')}-'
+  String get iso8601 =>
+      '${year.toString().padLeft(4, '0')}-'
       '${month.toString().padLeft(2, '0')}-'
       '${day.toString().padLeft(2, '0')}';
 

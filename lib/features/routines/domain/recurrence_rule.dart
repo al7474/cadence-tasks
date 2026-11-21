@@ -11,7 +11,7 @@ final class DailyRecurrence extends RecurrenceRule {
 
 final class WeekdayRecurrence extends RecurrenceRule {
   WeekdayRecurrence._(Iterable<int> weekdaysIso)
-      : weekdaysIso = Set<int>.unmodifiable(weekdaysIso);
+    : weekdaysIso = Set<int>.unmodifiable(weekdaysIso);
 
   final Set<int> weekdaysIso;
 
@@ -42,8 +42,6 @@ final class IntervalRecurrence extends RecurrenceRule {
       );
     }
 
-    return Success<IntervalRecurrence>(
-      IntervalRecurrence._(intervalDays),
-    );
+    return Success<IntervalRecurrence>(IntervalRecurrence._(intervalDays));
   }
 }

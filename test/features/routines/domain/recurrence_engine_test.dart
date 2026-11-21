@@ -8,23 +8,25 @@ import '../../../support/domain_test_factories.dart';
 
 void main() {
   group('RecurrenceEngine', () {
-    test('daily recurrence includes its start date and respects its end date',
-        () {
-      final start = date(2026, 1, 10);
-      final end = date(2026, 1, 12);
-      final daily = routine(
-        id: 'daily',
-        title: 'Daily routine',
-        startDate: start,
-        endDate: end,
-        targetTime: time(8, 0),
-      );
+    test(
+      'daily recurrence includes its start date and respects its end date',
+      () {
+        final start = date(2026, 1, 10);
+        final end = date(2026, 1, 12);
+        final daily = routine(
+          id: 'daily',
+          title: 'Daily routine',
+          startDate: start,
+          endDate: end,
+          targetTime: time(8, 0),
+        );
 
-      expect(RecurrenceEngine.occursOn(daily, date(2026, 1, 9)), isFalse);
-      expect(RecurrenceEngine.occursOn(daily, start), isTrue);
-      expect(RecurrenceEngine.occursOn(daily, end), isTrue);
-      expect(RecurrenceEngine.occursOn(daily, date(2026, 1, 13)), isFalse);
-    });
+        expect(RecurrenceEngine.occursOn(daily, date(2026, 1, 9)), isFalse);
+        expect(RecurrenceEngine.occursOn(daily, start), isTrue);
+        expect(RecurrenceEngine.occursOn(daily, end), isTrue);
+        expect(RecurrenceEngine.occursOn(daily, date(2026, 1, 13)), isFalse);
+      },
+    );
 
     test('weekday recurrence uses ISO weekday numbers', () {
       final weekdays = valueOf(WeekdayRecurrence.create({DateTime.monday, 3}));
@@ -99,11 +101,7 @@ void main() {
           start: date(2026, 2, 1),
           end: date(2026, 2, 5),
         ).toList(),
-        <LocalDate>[
-          date(2026, 2, 1),
-          date(2026, 2, 3),
-          date(2026, 2, 5),
-        ],
+        <LocalDate>[date(2026, 2, 1), date(2026, 2, 3), date(2026, 2, 5)],
       );
     });
 

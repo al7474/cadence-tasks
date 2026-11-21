@@ -16,9 +16,7 @@ T valueOf<T>(Result<T> result) {
 }
 
 LocalDate date(int year, int month, int day) {
-  return valueOf(
-    LocalDate.create(year: year, month: month, day: day),
-  );
+  return valueOf(LocalDate.create(year: year, month: month, day: day));
 }
 
 LocalTime time(int hour, int minute) {
@@ -100,9 +98,6 @@ SyncVersion syncVersion({
   required String mutationId,
 }) {
   return valueOf(
-    SyncVersion.create(
-      updatedAtUtc: updatedAtUtc,
-      mutationId: mutationId,
-    ),
+    SyncVersion.create(updatedAtUtc: updatedAtUtc, mutationId: mutationId),
   );
 }

@@ -2,10 +2,7 @@ import 'package:cadence_tasks/core/domain/failure.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 
 final class SyncVersion implements Comparable<SyncVersion> {
-  const SyncVersion._({
-    required this.updatedAtUtc,
-    required this.mutationId,
-  });
+  const SyncVersion._({required this.updatedAtUtc, required this.mutationId});
 
   final DateTime updatedAtUtc;
   final String mutationId;
@@ -26,10 +23,7 @@ final class SyncVersion implements Comparable<SyncVersion> {
     }
 
     return Success<SyncVersion>(
-      SyncVersion._(
-        updatedAtUtc: updatedAtUtc,
-        mutationId: mutationId.trim(),
-      ),
+      SyncVersion._(updatedAtUtc: updatedAtUtc, mutationId: mutationId.trim()),
     );
   }
 

@@ -44,14 +44,9 @@ final class RoutineOccurrenceState {
         ),
       );
     }
-    if (status != TaskStatus.pending &&
-        (rescheduledDate != null ||
-            rescheduledTime != null ||
-            snoozedUntilUtc != null)) {
+    if (status != TaskStatus.pending && snoozedUntilUtc != null) {
       return const FailureResult<RoutineOccurrenceState>(
-        ValidationFailure(
-          'Only pending occurrences can be snoozed or rescheduled.',
-        ),
+        ValidationFailure('Only pending occurrences can be snoozed.'),
       );
     }
     if ((completedAtUtc != null && !completedAtUtc.isUtc) ||

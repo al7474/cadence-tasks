@@ -1,10 +1,6 @@
 import 'package:cadence_tasks/features/synchronization/domain/sync_version.dart';
 
-enum ConflictWinner {
-  local,
-  remote,
-  sameVersion,
-}
+enum ConflictWinner { local, remote, sameVersion }
 
 abstract final class ConflictResolver {
   static ConflictWinner resolve({

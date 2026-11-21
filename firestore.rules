@@ -1,0 +1,208 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function hasValidMetadata(userId) {
+      return request.resource.data.userId == userId
+        && request.resource.data.updatedAtUtcMillis is int
+        && request.resource.data.mutationId is string;
+    }
+
+    function hasNewerVersion() {
+      return request.resource.data.updatedAtUtcMillis > resource.data.updatedAtUtcMillis
+        || (
+          request.resource.data.updatedAtUtcMillis == resource.data.updatedAtUtcMillis
+          && request.resource.data.mutationId >= resource.data.mutationId
+        );
+    }
+
+    match /users/{userId}/routineTemplates/{routineId} {
+      allow read: if signedInAs(userId)
+        && resource.data.userId == userId;
+      allow create: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.id == routineId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'notes',
+          'startDate',
+          'endDate',
+          'targetTimeMinutes',
+          'recurrenceKind',
+          'weekdaysMask',
+          'intervalDays',
+          'reminderEnabled',
+          'isEnabled',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.title is string
+        && request.resource.data.startDate is string
+        && request.resource.data.targetTimeMinutes is int
+        && request.resource.data.targetTimeMinutes >= 0
+        && request.resource.data.targetTimeMinutes < 1440
+        && request.resource.data.recurrenceKind in [
+          'daily',
+          'weekdays',
+          'interval'
+        ]
+        && request.resource.data.reminderEnabled is bool
+        && request.resource.data.isEnabled is bool;
+      allow update: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.id == routineId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'notes',
+          'startDate',
+          'endDate',
+          'targetTimeMinutes',
+          'recurrenceKind',
+          'weekdaysMask',
+          'intervalDays',
+          'reminderEnabled',
+          'isEnabled',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && hasNewerVersion()
+        && request.resource.data.title is string
+        && request.resource.data.startDate is string
+        && request.resource.data.targetTimeMinutes is int
+        && request.resource.data.targetTimeMinutes >= 0
+        && request.resource.data.targetTimeMinutes < 1440
+        && request.resource.data.recurrenceKind in [
+          'daily',
+          'weekdays',
+          'interval'
+        ]
+        && request.resource.data.reminderEnabled is bool
+        && request.resource.data.isEnabled is bool;
+      allow delete: if false;
+    }
+
+    match /users/{userId}/routineOccurrenceLogs/{occurrenceId} {
+      allow read: if signedInAs(userId)
+        && resource.data.userId == userId;
+      allow create: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.routineId is string
+        && request.resource.data.occurrenceDate is string
+        && request.resource.data.routineId + ':' + request.resource.data.occurrenceDate == occurrenceId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'routineId',
+          'occurrenceDate',
+          'status',
+          'completedAtUtcMillis',
+          'snoozedUntilUtcMillis',
+          'rescheduledDate',
+          'rescheduledTimeMinutes',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.status in [
+          'pending',
+          'completed',
+          'skipped'
+        ];
+      allow update: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.routineId is string
+        && request.resource.data.occurrenceDate is string
+        && request.resource.data.routineId + ':' + request.resource.data.occurrenceDate == occurrenceId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'routineId',
+          'occurrenceDate',
+          'status',
+          'completedAtUtcMillis',
+          'snoozedUntilUtcMillis',
+          'rescheduledDate',
+          'rescheduledTimeMinutes',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.routineId is string
+        && request.resource.data.occurrenceDate is string
+        && request.resource.data.status in [
+          'pending',
+          'completed',
+          'skipped'
+        ]
+        && hasNewerVersion();
+      allow delete: if false;
+    }
+
+    match /users/{userId}/oneOffTasks/{taskId} {
+      allow read: if signedInAs(userId)
+        && resource.data.userId == userId;
+      allow create: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.id == taskId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'notes',
+          'scheduledDate',
+          'scheduledTimeMinutes',
+          'reminderEnabled',
+          'status',
+          'completedAtUtcMillis',
+          'snoozedUntilUtcMillis',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.title is string
+        && request.resource.data.scheduledDate is string
+        && request.resource.data.reminderEnabled is bool
+        && request.resource.data.status in [
+          'pending',
+          'completed',
+          'skipped'
+        ];
+      allow update: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && request.resource.data.id == taskId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'title',
+          'notes',
+          'scheduledDate',
+          'scheduledTimeMinutes',
+          'reminderEnabled',
+          'status',
+          'completedAtUtcMillis',
+          'snoozedUntilUtcMillis',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && hasNewerVersion()
+        && request.resource.data.title is string
+        && request.resource.data.scheduledDate is string
+        && request.resource.data.reminderEnabled is bool
+        && request.resource.data.status in [
+          'pending',
+          'completed',
+          'skipped'
+        ];
+      allow delete: if false;
+    }
+  }
+}

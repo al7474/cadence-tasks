@@ -12,8 +12,9 @@ abstract final class RecurrenceEngine {
 
     return switch (routine.recurrence) {
       DailyRecurrence() => true,
-      WeekdayRecurrence(:final weekdaysIso) =>
-        weekdaysIso.contains(date.weekday),
+      WeekdayRecurrence(:final weekdaysIso) => weekdaysIso.contains(
+        date.weekday,
+      ),
       IntervalRecurrence(:final intervalDays) =>
         date.daysSince(routine.startDate) % intervalDays == 0,
     };

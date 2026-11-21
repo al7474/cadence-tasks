@@ -5,9 +5,9 @@ final class DailyAgenda {
     required List<AgendaItem> overdue,
     required List<AgendaItem> upcoming,
     required List<AgendaItem> completed,
-  })  : overdue = List<AgendaItem>.unmodifiable(overdue),
-        upcoming = List<AgendaItem>.unmodifiable(upcoming),
-        completed = List<AgendaItem>.unmodifiable(completed);
+  }) : overdue = List<AgendaItem>.unmodifiable(overdue),
+       upcoming = List<AgendaItem>.unmodifiable(upcoming),
+       completed = List<AgendaItem>.unmodifiable(completed);
 
   final List<AgendaItem> overdue;
   final List<AgendaItem> upcoming;

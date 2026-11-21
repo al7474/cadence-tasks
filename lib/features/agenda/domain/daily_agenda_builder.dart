@@ -44,11 +44,14 @@ final class DailyAgendaBuilder {
       items.add(
         AgendaItem(
           id: _routineItemId(routine.id, forDate),
+          sourceId: routine.id,
+          sourceDate: forDate,
           title: routine.title,
           kind: AgendaItemKind.routine,
           scheduledDate: state?.rescheduledDate ?? forDate,
           scheduledTime: state?.rescheduledTime ?? routine.targetTime,
           status: state?.status ?? TaskStatus.pending,
+          reminderEnabled: routine.reminderEnabled,
           snoozedUntilUtc: state?.snoozedUntilUtc,
         ),
       );
@@ -67,11 +70,14 @@ final class DailyAgendaBuilder {
       items.add(
         AgendaItem(
           id: _routineItemId(routine.id, state.occurrenceDate),
+          sourceId: routine.id,
+          sourceDate: state.occurrenceDate,
           title: routine.title,
           kind: AgendaItemKind.routine,
           scheduledDate: forDate,
           scheduledTime: state.rescheduledTime ?? routine.targetTime,
           status: state.status,
+          reminderEnabled: routine.reminderEnabled,
           snoozedUntilUtc: state.snoozedUntilUtc,
         ),
       );
@@ -85,11 +91,14 @@ final class DailyAgendaBuilder {
       items.add(
         AgendaItem(
           id: 'one-off:${task.id}',
+          sourceId: task.id,
+          sourceDate: task.scheduledDate,
           title: task.title,
           kind: AgendaItemKind.oneOff,
           scheduledDate: task.scheduledDate,
           scheduledTime: task.scheduledTime,
           status: task.status,
+          reminderEnabled: task.reminderEnabled,
           snoozedUntilUtc: task.snoozedUntilUtc,
         ),
       );

@@ -10,7 +10,7 @@ final class CreateRoutine {
 
   final RoutineRepository _repository;
 
-  Future<Result<Unit>> execute({
+  Future<Result<RoutineTemplate>> execute({
     required String id,
     required String title,
     required LocalDate startDate,
@@ -19,6 +19,7 @@ final class CreateRoutine {
     String? notes,
     LocalDate? endDate,
     bool reminderEnabled = true,
+    bool isEnabled = true,
   }) {
     final result = RoutineTemplate.create(
       id: id,
@@ -29,12 +30,25 @@ final class CreateRoutine {
       recurrence: recurrence,
       notes: notes,
       reminderEnabled: reminderEnabled,
+      isEnabled: isEnabled,
     );
 
     return switch (result) {
       FailureResult<RoutineTemplate>(:final failure) =>
-        Future<Result<Unit>>.value(FailureResult<Unit>(failure)),
-      Success<RoutineTemplate>(:final value) => _repository.save(value),
+        Future<Result<RoutineTemplate>>.value(
+          FailureResult<RoutineTemplate>(failure),
+        ),
+      Success<RoutineTemplate>(:final value) => _save(value),
+    };
+  }
+
+  Future<Result<RoutineTemplate>> _save(RoutineTemplate routine) async {
+    final result = await _repository.save(routine);
+    return switch (result) {
+      Success<Unit>() => Success<RoutineTemplate>(routine),
+      FailureResult<Unit>(:final failure) => FailureResult<RoutineTemplate>(
+        failure,
+      ),
     };
   }
 }
