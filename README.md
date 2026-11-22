@@ -43,10 +43,14 @@ browser.
 ## Synchronization and scheduling
 
 Local mutations are queued for synchronization and use soft deletes. When
-Firebase is configured, synchronization runs on sign-in and app resume; Android
-also requests a best-effort WorkManager sync every six hours when network access
-is available. Web synchronization runs while the app is open. WorkManager is not
-an exact-time scheduler, and background execution can be deferred by the OS.
+Firebase is configured, local changes trigger a debounced upload and open,
+connected clients listen for remote changes. Synchronization also runs on
+sign-in and app resume; Android requests a best-effort WorkManager sync every
+six hours when network access is available. Web listeners run while the app is
+open. Offline changes remain queued until connectivity returns or the app
+resumes. Neither Web nor Android can guarantee immediate synchronization while
+the app is closed or suspended, and Android background execution can be
+deferred by the OS.
 
 Android notification alarms are scheduled locally and are independent of cloud
 sync. The app reconciles pending reminders on startup and resume and handles

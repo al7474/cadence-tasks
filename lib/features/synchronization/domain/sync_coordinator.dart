@@ -14,4 +14,6 @@ final class SyncSummary {
 
 abstract interface class SyncCoordinator {
   Future<Result<SyncSummary>> synchronize();
+
+  Stream<Result<SyncSummary>> watchRemoteChanges();
 }

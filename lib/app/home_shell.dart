@@ -22,6 +22,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _syncInProgress = false;
+  bool _syncRequested = false;
+  bool _hasPendingSyncMutations = false;
+  Timer? _syncDebounce;
 
   static const _pages = [TodayScreen(), RoutinesScreen(), SettingsScreen()];
 
@@ -37,6 +40,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   @override
   void dispose() {
+    _syncDebounce?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -55,6 +59,42 @@ class _HomeShellState extends ConsumerState<HomeShell>
       if (next.asData?.value != null) {
         unawaited(_synchronizeIfReady());
       }
+    });
+    ref.listen(pendingSyncOutboxProvider, (previous, next) {
+      final pendingMutations = next.asData?.value;
+      if (pendingMutations == null) {
+        return;
+      }
+
+      _hasPendingSyncMutations = pendingMutations.isNotEmpty;
+      if (_hasPendingSyncMutations) {
+        _scheduleSynchronization();
+      }
+    });
+    ref.listen(realtimeSyncEventsProvider, (previous, next) {
+      next.when(
+        data: (result) {
+          switch (result) {
+            case Success<SyncSummary>(:final value):
+              if (value.downloaded > 0) {
+                ref.invalidate(dailyAgendaProvider);
+                ref.invalidate(routinesProvider);
+                ref.read(syncStatusProvider.notifier).state =
+                    'Live sync: ${value.downloaded} downloaded.';
+              }
+              if (_hasPendingSyncMutations) {
+                _scheduleSynchronization();
+              }
+            case FailureResult<SyncSummary>(:final failure):
+              ref.read(syncStatusProvider.notifier).state = failure.message;
+          }
+        },
+        error: (error, stackTrace) {
+          ref.read(syncStatusProvider.notifier).state =
+              'Live sync failed: $error';
+        },
+        loading: () {},
+      );
     });
 
     return Scaffold(
@@ -89,33 +129,51 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   Future<void> _synchronizeIfReady() async {
     if (_syncInProgress) {
+      _syncRequested = true;
       return;
     }
-    final coordinator = ref.read(syncCoordinatorProvider);
-    if (coordinator == null) {
-      return;
-    }
-
     _syncInProgress = true;
     try {
-      final result = await coordinator.synchronize();
-      if (!mounted) {
-        return;
-      }
+      do {
+        _syncRequested = false;
+        final coordinator = ref.read(syncCoordinatorProvider);
+        if (coordinator == null) {
+          return;
+        }
 
-      switch (result) {
-        case Success<SyncSummary>(:final value):
-          ref.read(syncStatusProvider.notifier).state =
-              'Last sync: ${value.uploaded} uploaded, '
-              '${value.downloaded} downloaded.';
-          ref.invalidate(dailyAgendaProvider);
-          ref.invalidate(routinesProvider);
-        case FailureResult<SyncSummary>(:final failure):
-          ref.read(syncStatusProvider.notifier).state = failure.message;
-      }
+        final result = await coordinator.synchronize();
+        if (!mounted) {
+          return;
+        }
+
+        switch (result) {
+          case Success<SyncSummary>(:final value):
+            ref.read(syncStatusProvider.notifier).state =
+                'Last sync: ${value.uploaded} uploaded, '
+                '${value.downloaded} downloaded.';
+            ref.invalidate(dailyAgendaProvider);
+            ref.invalidate(routinesProvider);
+          case FailureResult<SyncSummary>(:final failure):
+            ref.read(syncStatusProvider.notifier).state = failure.message;
+        }
+      } while (_syncRequested && mounted);
     } finally {
       _syncInProgress = false;
     }
+  }
+
+  void _scheduleSynchronization() {
+    if (!mounted) {
+      return;
+    }
+
+    _syncDebounce?.cancel();
+    _syncDebounce = Timer(const Duration(milliseconds: 300), () {
+      _syncDebounce = null;
+      if (mounted) {
+        unawaited(_synchronizeIfReady());
+      }
+    });
   }
 
   Future<void> _reconcileReminders() async {

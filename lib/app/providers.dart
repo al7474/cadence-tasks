@@ -175,3 +175,18 @@ final syncCoordinatorProvider = Provider<SyncCoordinator?>((ref) {
     userId: user.id,
   );
 });
+
+final pendingSyncOutboxProvider = StreamProvider<List<SyncOutboxEntryRow>>((
+  ref,
+) {
+  final userId = ref.watch(activeUserIdProvider);
+  final database = ref.watch(appDatabaseProvider);
+  return (database.select(
+    database.syncOutboxEntries,
+  )..where((entry) => entry.userId.equals(userId))).watch();
+});
+
+final realtimeSyncEventsProvider = StreamProvider<Result<SyncSummary>>((ref) {
+  final coordinator = ref.watch(syncCoordinatorProvider);
+  return coordinator?.watchRemoteChanges() ?? const Stream.empty();
+});

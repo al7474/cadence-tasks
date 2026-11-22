@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cadence_tasks/core/domain/failure.dart';
@@ -92,6 +93,7 @@ final class FirebaseSyncCoordinator implements SyncCoordinator {
               recordId: mutation.recordId,
               payload: payload,
             );
+            await _local.removeMutation(mutation.id);
             conflictsResolved++;
           case _AlreadySynchronized():
             await _local.removeMutation(mutation.id);
@@ -175,6 +177,98 @@ final class FirebaseSyncCoordinator implements SyncCoordinator {
         ConflictFailure('Cloud data could not be synchronized: $error'),
       );
     }
+  }
+
+  @override
+  Stream<Result<SyncSummary>> watchRemoteChanges() {
+    final controller = StreamController<Result<SyncSummary>>();
+    final subscriptions = <StreamSubscription<Result<SyncSummary>>>[];
+
+    controller.onListen = () {
+      for (final collectionName in _collections) {
+        subscriptions.add(
+          _watchCollection(collectionName).listen(
+            controller.add,
+            onError: (Object error, StackTrace stackTrace) {
+              controller.addError(error, stackTrace);
+            },
+          ),
+        );
+      }
+    };
+    controller.onCancel = () async {
+      await Future.wait(
+        subscriptions.map((subscription) => subscription.cancel()),
+      );
+    };
+
+    return controller.stream;
+  }
+
+  Stream<Result<SyncSummary>> _watchCollection(String collectionName) {
+    return _collection(
+      collectionName,
+    ).snapshots(includeMetadataChanges: true).asyncMap((snapshot) async {
+      try {
+        return Success<SyncSummary>(
+          await _applyRemoteChanges(collectionName, snapshot),
+        );
+      } on FirebaseException catch (error) {
+        return FailureResult<SyncSummary>(
+          UnavailableFailure(
+            error.message ?? 'Live synchronization failed (${error.code}).',
+          ),
+        );
+      } on FormatException catch (error) {
+        return FailureResult<SyncSummary>(
+          ConflictFailure('Cloud data could not be synchronized: $error'),
+        );
+      }
+    });
+  }
+
+  Future<SyncSummary> _applyRemoteChanges(
+    String collectionName,
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) async {
+    var downloaded = 0;
+    for (final change in snapshot.docChanges) {
+      if (change.type == DocumentChangeType.removed) {
+        continue;
+      }
+
+      final payload = change.doc.data();
+      if (payload == null) {
+        throw const FormatException('A cloud record has no document data.');
+      }
+      if (payload['userId'] != _userId) {
+        throw const FormatException(
+          'A remote record belongs to a different user.',
+        );
+      }
+
+      final remoteVersion = _versionFromPayload(payload);
+      final localVersion = await _local.versionFor(
+        userId: _userId,
+        collectionName: collectionName,
+        recordId: change.doc.id,
+      );
+      if (localVersion == null || remoteVersion.compareTo(localVersion) > 0) {
+        await _local.applyRemoteRecord(
+          userId: _userId,
+          collectionName: collectionName,
+          recordId: change.doc.id,
+          payload: payload,
+        );
+        downloaded++;
+      }
+    }
+
+    return SyncSummary(
+      uploaded: 0,
+      downloaded: downloaded,
+      conflictsResolved: 0,
+    );
   }
 
   CollectionReference<Map<String, dynamic>> _collection(String name) {
