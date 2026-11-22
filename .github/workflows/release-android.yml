@@ -151,13 +151,12 @@ jobs:
         run: |
           set -euo pipefail
           expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
-          keystore_sha1="$(keytool -list -v \
+          keystore_sha1="$(keytool -exportcert \
             -keystore "${ANDROID_KEYSTORE_PATH}" \
             -alias "${ANDROID_KEY_ALIAS}" \
             -storepass:env ANDROID_KEYSTORE_PASSWORD \
-            | sed -nE 's/^SHA1: ([[:xdigit:]:]+)$/\1/p' \
-            | tr -d ':' \
-            | tr '[:upper:]' '[:lower:]')"
+            | sha1sum \
+            | awk '{print $1}')"
           if [[ "${keystore_sha1}" != "${expected_sha1}" ]]; then
             echo "::error::The uploaded keystore has SHA-1 ${keystore_sha1}; it does not match the Firebase release certificate."
             exit 1
