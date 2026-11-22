@@ -21,8 +21,7 @@ service cloud.firestore {
     }
 
     match /users/{userId}/routineTemplates/{routineId} {
-      allow read: if signedInAs(userId)
-        && resource.data.userId == userId;
+      allow read: if signedInAs(userId);
       allow create: if signedInAs(userId)
         && hasValidMetadata(userId)
         && request.resource.data.id == routineId
@@ -92,8 +91,7 @@ service cloud.firestore {
     }
 
     match /users/{userId}/routineOccurrenceLogs/{occurrenceId} {
-      allow read: if signedInAs(userId)
-        && resource.data.userId == userId;
+      allow read: if signedInAs(userId);
       allow create: if signedInAs(userId)
         && hasValidMetadata(userId)
         && request.resource.data.routineId is string
@@ -147,8 +145,7 @@ service cloud.firestore {
     }
 
     match /users/{userId}/oneOffTasks/{taskId} {
-      allow read: if signedInAs(userId)
-        && resource.data.userId == userId;
+      allow read: if signedInAs(userId);
       allow create: if signedInAs(userId)
         && hasValidMetadata(userId)
         && request.resource.data.id == taskId
