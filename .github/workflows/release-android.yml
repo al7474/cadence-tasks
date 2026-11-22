@@ -151,12 +151,15 @@ jobs:
         run: |
           set -euo pipefail
           expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
-          keystore_sha1="$(keytool -exportcert \
+          certificate_file="${RUNNER_TEMP}/cadence-tasks-release-certificate.der"
+          trap 'rm -f "${certificate_file}"' EXIT
+          keytool -exportcert \
             -keystore "${ANDROID_KEYSTORE_PATH}" \
             -alias "${ANDROID_KEY_ALIAS}" \
+            -file "${certificate_file}" \
             -storepass:env ANDROID_KEYSTORE_PASSWORD \
-            | sha1sum \
-            | awk '{print $1}')"
+            >/dev/null
+          keystore_sha1="$(sha1sum "${certificate_file}" | awk '{print $1}')"
           if [[ "${keystore_sha1}" != "${expected_sha1}" ]]; then
             echo "::error::The uploaded keystore has SHA-1 ${keystore_sha1}; it does not match the Firebase release certificate."
             exit 1
