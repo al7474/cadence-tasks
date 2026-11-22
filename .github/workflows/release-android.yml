@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to build and publish
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
       FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
       FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
       FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
@@ -25,11 +32,11 @@ jobs:
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      ANDROID_RELEASE_SHA1: ${{ secrets.ANDROID_RELEASE_SHA1 }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref }}
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -49,8 +56,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          tag_version="${GITHUB_REF_NAME#v}"
-          if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          tag_version="${RELEASE_TAG#v}"
+          if [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Release tags must use vMAJOR.MINOR.PATCH."
             exit 1
           fi
@@ -62,8 +69,8 @@ jobs:
             exit 1
           fi
 
-          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            echo "::error::A GitHub Release already exists for ${GITHUB_REF_NAME}."
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "::error::A GitHub Release already exists for ${RELEASE_TAG}."
             exit 1
           fi
 
@@ -109,8 +116,7 @@ jobs:
             ANDROID_KEYSTORE_BASE64 \
             ANDROID_KEYSTORE_PASSWORD \
             ANDROID_KEY_ALIAS \
-            ANDROID_KEY_PASSWORD \
-            ANDROID_RELEASE_SHA1
+            ANDROID_KEY_PASSWORD
           do
             if [[ -z "${!name}" ]]; then
               echo "::error::Required GitHub Actions secret ${name} is missing."
@@ -140,32 +146,48 @@ jobs:
           with open(".env", "w", encoding="utf-8") as environment_file:
               json.dump({key: os.environ[key] for key in keys}, environment_file)
           PY
+      - name: Verify release keystore fingerprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
+          keystore_sha1="$(keytool -list -v \
+            -keystore "${ANDROID_KEYSTORE_PATH}" \
+            -alias "${ANDROID_KEY_ALIAS}" \
+            -storepass:env ANDROID_KEYSTORE_PASSWORD \
+            | sed -nE 's/^SHA1: ([[:xdigit:]:]+)$/\1/p' \
+            | tr -d ':' \
+            | tr '[:upper:]' '[:lower:]')"
+          if [[ "${keystore_sha1}" != "${expected_sha1}" ]]; then
+            echo "::error::The uploaded keystore has SHA-1 ${keystore_sha1}; it does not match the Firebase release certificate."
+            exit 1
+          fi
       - name: Build ARM64 APK
         run: flutter build apk --release --split-per-abi --dart-define-from-file=.env
       - name: Publish GitHub Release
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           apk_path="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           release_asset="cadence-tasks-${version}-android-arm64.apk"
           test -f "${apk_path}"
           build_tools="${ANDROID_HOME}/build-tools/$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n 1)"
           package_name="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE "s/^package: name='([^']+)'.*/\1/p")"
           native_abis="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE 's/^native-code: (.*)$/\1/p')"
-          signer_sha1="$("${build_tools}/apksigner" verify --print-certs "${apk_path}" | sed -nE 's/^Signer #1 certificate SHA-1 digest: ([[:xdigit:]]+)$/\1/p' | tr '[:upper:]' '[:lower:]')"
-          expected_sha1="$(printf '%s' "${ANDROID_RELEASE_SHA1}" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          signer_sha1="$("${build_tools}/apksigner" verify --print-certs "${apk_path}" | sed -nE 's/^Signer #1 certificate SHA-1 digest: ([[:xdigit:]:]+)$/\1/p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
           if [[ "${package_name}" != "com.al7474.cadence_tasks" || "${native_abis}" != "'arm64-v8a'" ]]; then
             echo "::error::The release APK must be Cadence Tasks for ARM64 only."
             exit 1
           fi
           if [[ -z "${signer_sha1}" || "${signer_sha1}" != "${expected_sha1}" ]]; then
-            echo "::error::The APK signing certificate does not match the configured release SHA-1."
+            echo "::error::The APK signer SHA-1 is ${signer_sha1:-missing}; expected ${expected_sha1}."
             exit 1
           fi
           cp "${apk_path}" "${release_asset}"
-          gh release create "${GITHUB_REF_NAME}" "${release_asset}" \
+          gh release create "${RELEASE_TAG}" "${release_asset}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "Cadence Tasks ${GITHUB_REF_NAME}" \
+            --title "Cadence Tasks ${RELEASE_TAG}" \
             --generate-notes \
             --verify-tag

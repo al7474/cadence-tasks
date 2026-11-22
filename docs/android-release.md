@@ -5,7 +5,9 @@ The Android release workflow publishes only the ARM64 APK after a new
 requires an increasing Android build number, runs analysis and tests, and
 creates a GitHub Release. It does not publish on ordinary branch pushes. The
 build may produce local APK variants for other ABIs, but they are not attached
-to the release.
+to the release. A failed tagged run can be retried from the **Android ARM64
+release** workflow by selecting the `main` branch and entering the existing
+tag, such as `v1.0.0`.
 
 ## One-time setup
 
@@ -14,7 +16,8 @@ to the release.
 
    ```powershell
    $keystore = "$env:USERPROFILE\.android\cadence-tasks-upload.jks"
-   keytool -genkeypair -v -keystore $keystore -alias cadence-tasks-upload `
+   keytool -genkeypair -v -keystore $keystore -storetype JKS `
+     -alias cadence-tasks-upload `
      -keyalg RSA -keysize 2048 -validity 10000
    ```
 
@@ -29,9 +32,9 @@ to the release.
    ```
 
    Add that SHA-1 fingerprint to the `com.al7474.cadence_tasks` Android app in
-   Firebase. Add the same fingerprint without colons as the
-   `ANDROID_RELEASE_SHA1` GitHub Actions secret. Keep the existing debug
-   fingerprint for emulator builds.
+   Firebase. Keep the existing debug fingerprint for emulator builds. The
+   release workflow checks that the uploaded keystore has the expected release
+   fingerprint before building.
 
 3. In the GitHub repository, open **Settings > Secrets and variables >
    Actions** and add these repository secrets:
@@ -40,7 +43,6 @@ to the release.
    - `ANDROID_KEYSTORE_PASSWORD`: Keystore password.
    - `ANDROID_KEY_ALIAS`: `cadence-tasks-upload`.
    - `ANDROID_KEY_PASSWORD`: Key password.
-   - `ANDROID_RELEASE_SHA1`: Release certificate SHA-1 without colons.
    - `FIREBASE_API_KEY`
    - `FIREBASE_PROJECT_ID`
    - `FIREBASE_MESSAGING_SENDER_ID`
@@ -52,6 +54,8 @@ to the release.
 
    The Firebase values are the client configuration used by the app. Copy them
    from the local `.env` file; do not paste them into issues or commit `.env`.
+The release SHA-1 is public and pinned in the workflow; no GitHub secret is
+needed for it.
 
 To copy the keystore as Base64 to the local clipboard without printing it:
 
@@ -72,5 +76,5 @@ To copy the keystore as Base64 to the local clipboard without printing it:
    ```
 
 GitHub Actions runs checks and creates a release containing
-`cadence-tasks-1.0.0-android-arm64.apk`. If the tag, app version, build number,
-or required secrets are invalid, no APK is published.
+`cadence-tasks-1.0.0-android-arm64.apk`. If the tag, app version, build number, keystore fingerprint, or required
+secrets are invalid, no APK is published.
