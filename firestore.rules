@@ -87,7 +87,7 @@ service cloud.firestore {
         ]
         && request.resource.data.reminderEnabled is bool
         && request.resource.data.isEnabled is bool;
-      allow delete: if false;
+      allow delete: if signedInAs(userId);
     }
 
     match /users/{userId}/routineOccurrenceLogs/{occurrenceId} {
@@ -141,7 +141,7 @@ service cloud.firestore {
           'skipped'
         ]
         && hasNewerVersion();
-      allow delete: if false;
+      allow delete: if signedInAs(userId);
     }
 
     match /users/{userId}/oneOffTasks/{taskId} {
@@ -199,7 +199,7 @@ service cloud.firestore {
           'completed',
           'skipped'
         ];
-      allow delete: if false;
+      allow delete: if signedInAs(userId);
     }
   }
 }

@@ -249,6 +249,29 @@ final class LocalNotificationScheduler implements NotificationScheduler {
     }
   }
 
+  @override
+  Future<Result<Unit>> cancelAllReminders() async {
+    if (kIsWeb) {
+      return const Success<Unit>(Unit.value);
+    }
+
+    final initialization = await _ensureInitialized();
+    if (initialization case FailureResult<Unit>()) {
+      return initialization;
+    }
+
+    try {
+      await _plugin.cancelAll();
+      return const Success<Unit>(Unit.value);
+    } on PlatformException catch (error) {
+      return FailureResult<Unit>(
+        UnavailableFailure(
+          error.message ?? 'Scheduled reminders could not be cancelled.',
+        ),
+      );
+    }
+  }
+
   Future<Result<Unit>> _scheduleInitialized(AgendaItem item) async {
     final scheduledTime = item.scheduledTime;
     if (scheduledTime == null) {

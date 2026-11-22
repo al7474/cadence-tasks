@@ -81,6 +81,83 @@ final class DriftSyncRepository {
     )..where((entry) => entry.id.equals(mutationId))).go();
   }
 
+  Future<void> deleteUserData(String userId) async {
+    if (userId.trim().isEmpty || userId == guestUserId) {
+      throw ArgumentError.value(userId, 'userId', 'Must be a signed-in user.');
+    }
+
+    await _deleteUserRecords(userId);
+  }
+
+  Future<void> deleteAllLocalData() async {
+    await _database.transaction(() async {
+      await _database.delete(_database.routineOccurrenceLogs).go();
+      await _database.delete(_database.routineTemplates).go();
+      await _database.delete(_database.oneOffTasks).go();
+      await _database.delete(_database.syncOutboxEntries).go();
+      await _database.delete(_database.syncCursors).go();
+    });
+  }
+
+  Future<void> _deleteUserRecords(String userId) async {
+    await _database.transaction(() async {
+      await (_database.delete(
+        _database.routineOccurrenceLogs,
+      )..where((row) => row.userId.equals(userId))).go();
+      await (_database.delete(
+        _database.routineTemplates,
+      )..where((row) => row.userId.equals(userId))).go();
+      await (_database.delete(
+        _database.oneOffTasks,
+      )..where((row) => row.userId.equals(userId))).go();
+      await (_database.delete(
+        _database.syncOutboxEntries,
+      )..where((row) => row.userId.equals(userId))).go();
+      await (_database.delete(
+        _database.syncCursors,
+      )..where((row) => row.userId.equals(userId))).go();
+    });
+  }
+
+  Future<void> deleteRemoteRecord({
+    required String userId,
+    required String collectionName,
+    required String recordId,
+  }) async {
+    await _database.transaction(() async {
+      switch (collectionName) {
+        case 'routineTemplates':
+          await (_database.delete(_database.routineTemplates)..where(
+                (row) => row.userId.equals(userId) & row.id.equals(recordId),
+              ))
+              .go();
+        case 'routineOccurrenceLogs':
+          final separator = recordId.lastIndexOf(':');
+          if (separator <= 0 || separator == recordId.length - 1) {
+            throw const FormatException('The occurrence record ID is invalid.');
+          }
+          await (_database.delete(_database.routineOccurrenceLogs)..where(
+                (row) =>
+                    row.userId.equals(userId) &
+                    row.routineId.equals(recordId.substring(0, separator)) &
+                    row.occurrenceDate.equals(
+                      recordId.substring(separator + 1),
+                    ),
+              ))
+              .go();
+        case 'oneOffTasks':
+          await (_database.delete(_database.oneOffTasks)..where(
+                (row) => row.userId.equals(userId) & row.id.equals(recordId),
+              ))
+              .go();
+        default:
+          throw FormatException('Unknown sync collection: $collectionName.');
+      }
+
+      await _discardOutboxForRecord(userId, collectionName, recordId);
+    });
+  }
+
   Future<void> applyRemoteRecord({
     required String userId,
     required String collectionName,

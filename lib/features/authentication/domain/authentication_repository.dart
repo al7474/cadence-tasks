@@ -7,4 +7,6 @@ abstract interface class AuthenticationRepository {
   Future<Result<AuthUser>> signInWithGoogle();
 
   Future<Result<Unit>> signOut();
+
+  Future<Result<Unit>> deleteAccount();
 }

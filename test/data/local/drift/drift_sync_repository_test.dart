@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cadence_tasks/data/local/drift/app_database.dart';
+import 'package:cadence_tasks/data/local/drift/drift_one_off_task_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_record_mappers.dart';
 import 'package:cadence_tasks/data/local/drift/drift_routine_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_sync_repository.dart';
@@ -119,4 +120,189 @@ void main() {
       isNull,
     );
   });
+
+  test(
+    'deletes one account local data without affecting another account',
+    () async {
+      final targetUserId = 'firebase-user-1';
+      final otherUserId = 'firebase-user-2';
+      final scheduledDate = date(2026, 11, 21);
+      final targetRoutines = DriftRoutineRepository(
+        database,
+        userId: targetUserId,
+      );
+      final otherRoutines = DriftRoutineRepository(
+        database,
+        userId: otherUserId,
+      );
+      final targetTasks = DriftOneOffTaskRepository(
+        database,
+        userId: targetUserId,
+      );
+      final otherTasks = DriftOneOffTaskRepository(
+        database,
+        userId: otherUserId,
+      );
+
+      await targetRoutines.save(
+        routine(
+          id: 'target-routine',
+          title: 'Target routine',
+          startDate: scheduledDate,
+          targetTime: time(8, 0),
+        ),
+      );
+      await otherRoutines.save(
+        routine(
+          id: 'other-routine',
+          title: 'Other routine',
+          startDate: scheduledDate,
+          targetTime: time(9, 0),
+        ),
+      );
+      await targetRoutines.saveOccurrenceState(
+        occurrenceState(
+          routineId: 'target-routine',
+          occurrenceDate: scheduledDate,
+        ),
+      );
+      await otherRoutines.saveOccurrenceState(
+        occurrenceState(
+          routineId: 'other-routine',
+          occurrenceDate: scheduledDate,
+        ),
+      );
+      await targetTasks.save(
+        oneOffTask(
+          id: 'target-task',
+          title: 'Target task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+      await otherTasks.save(
+        oneOffTask(
+          id: 'other-task',
+          title: 'Other task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+      await syncRepository.saveCursor(
+        targetUserId,
+        'oneOffTasks',
+        syncVersion(
+          updatedAtUtc: DateTime.utc(2026, 11, 21, 12),
+          mutationId: 'target-cursor',
+        ),
+      );
+
+      await syncRepository.deleteUserData(targetUserId);
+
+      expect(valueOf(await targetRoutines.getAllRoutines()), isEmpty);
+      expect(
+        valueOf(
+          await targetRoutines.getOccurrenceStatesAffecting(scheduledDate),
+        ),
+        isEmpty,
+      );
+      expect(
+        valueOf(await targetTasks.getScheduledFor(scheduledDate)),
+        isEmpty,
+      );
+      expect(await syncRepository.pendingMutations(targetUserId), isEmpty);
+      expect(
+        await syncRepository.cursorFor(targetUserId, 'oneOffTasks'),
+        isNull,
+      );
+      expect(valueOf(await otherRoutines.getAllRoutines()), hasLength(1));
+      expect(
+        valueOf(
+          await otherRoutines.getOccurrenceStatesAffecting(scheduledDate),
+        ),
+        hasLength(1),
+      );
+      expect(
+        valueOf(await otherTasks.getScheduledFor(scheduledDate)),
+        hasLength(1),
+      );
+      expect(await syncRepository.pendingMutations(otherUserId), hasLength(3));
+    },
+  );
+
+  test(
+    'applies a remote hard delete only to its authenticated owner',
+    () async {
+      final userId = 'firebase-user-1';
+      final otherUserId = 'firebase-user-2';
+      final scheduledDate = date(2026, 11, 21);
+      final userTasks = DriftOneOffTaskRepository(database, userId: userId);
+      final otherTasks = DriftOneOffTaskRepository(
+        database,
+        userId: otherUserId,
+      );
+      await userTasks.save(
+        oneOffTask(
+          id: 'deleted-task',
+          title: 'Deleted task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+      await otherTasks.save(
+        oneOffTask(
+          id: 'other-task',
+          title: 'Other task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+
+      await syncRepository.deleteRemoteRecord(
+        userId: userId,
+        collectionName: 'oneOffTasks',
+        recordId: 'deleted-task',
+      );
+
+      expect(valueOf(await userTasks.getScheduledFor(scheduledDate)), isEmpty);
+      expect(
+        valueOf(await otherTasks.getScheduledFor(scheduledDate)),
+        hasLength(1),
+      );
+      expect(await syncRepository.pendingMutations(userId), isEmpty);
+      expect(await syncRepository.pendingMutations(otherUserId), hasLength(1));
+    },
+  );
+
+  test(
+    'deletes all local accounts and queued changes on explicit request',
+    () async {
+      final scheduledDate = date(2026, 11, 21);
+      final guestTasks = DriftOneOffTaskRepository(database);
+      final signedInTasks = DriftOneOffTaskRepository(
+        database,
+        userId: 'firebase-user-1',
+      );
+      await guestTasks.save(
+        oneOffTask(
+          id: 'guest-task',
+          title: 'Guest task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+      await signedInTasks.save(
+        oneOffTask(
+          id: 'signed-in-task',
+          title: 'Signed-in task',
+          scheduledDate: scheduledDate,
+        ),
+      );
+
+      await syncRepository.deleteAllLocalData();
+
+      expect(valueOf(await guestTasks.getScheduledFor(scheduledDate)), isEmpty);
+      expect(
+        valueOf(await signedInTasks.getScheduledFor(scheduledDate)),
+        isEmpty,
+      );
+      expect(await syncRepository.pendingMutations('local'), isEmpty);
+      expect(await syncRepository.pendingMutations('firebase-user-1'), isEmpty);
+    },
+  );
 }

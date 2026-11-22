@@ -20,4 +20,6 @@ abstract interface class NotificationScheduler {
   Future<Result<Unit>> cancelReminder(String itemId);
 
   Future<Result<Unit>> cancelRoutineReminders(String routineId);
+
+  Future<Result<Unit>> cancelAllReminders();
 }

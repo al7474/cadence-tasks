@@ -23,12 +23,19 @@ After adding or changing Drift tables, generate their source with:
 dart run build_runner build
 ```
 
+The Firestore rules test suite uses the Firebase Emulator:
+
+```shell
+npm ci --prefix tool/firestore-rules-tests
+npm test --prefix tool/firestore-rules-tests
+```
+
 Android and Web platform runners are included. Run `flutter devices` to list
 available targets, then `flutter run -d <device-id>` to launch the app. For a
 Web preview, use `flutter run -d web-server` and open the printed URL in a
 browser.
 
-## MVP features
+## Features
 
 - Today agenda combines recurring routine occurrences and one-off tasks, with
   complete, skip, snooze, reschedule, and delete actions where applicable.
@@ -80,10 +87,39 @@ The app runs offline without Firebase configuration. To enable account sync:
    Google server client ID from your Firebase and Google Cloud consoles.
 3. Add the Android app's SHA-1 fingerprint to the Firebase Android app and add
    `localhost` to the authorized domains for the Web app.
-4. Deploy the user-scoped rules with `firebase deploy --only firestore:rules`.
+4. Deploy the user-scoped rules and indexes with
+   `firebase deploy --only firestore`.
 5. Run with `flutter run --dart-define-from-file=.env`.
 
 The options in `.env` are public client configuration, not service-account
 secrets. Never add private keys or service-account credentials to the Flutter
 application. Firestore Security Rules restrict all task documents to the
-authenticated user's UID.
+authenticated user's UID. Signed-in users can permanently delete their Cadence
+Tasks account and synced records from Settings.
+
+## Android releases
+
+The permanent Android application ID is `com.al7474.cadence_tasks`. Do not
+change it after distributing a release; Android treats a different ID as a
+separate app.
+
+GitHub Actions runs checks on pushes and pull requests to `main`. An Android
+release is created only when a new `vMAJOR.MINOR.PATCH` tag is pushed. Before
+tagging a release:
+
+1. Manually update `version` in `pubspec.yaml`, for example `1.0.0+1`.
+   The semantic version must match the tag, and the build number after `+` must
+   increase for every Android release.
+2. Push the version change to `main`.
+3. Create and push the matching tag, for example `git tag v1.0.0` followed by
+   `git push origin v1.0.0`.
+
+The release workflow verifies the tag, version, and build number; runs
+`flutter analyze` and `flutter test`; builds only the ARM64 APK; and creates a
+GitHub Release containing only the ARM64 APK. It will not replace an existing
+release.
+
+Follow [the Android release procedure](./docs/android-release.md) once to create
+and back up the signing key and configure GitHub Actions secrets. The release
+workflow intentionally produces no publishable APK until all signing and
+Firebase values are configured.

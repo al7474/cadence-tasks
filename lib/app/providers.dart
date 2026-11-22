@@ -39,6 +39,8 @@ final authenticationRepositoryProvider = Provider<AuthenticationRepository?>((
   return switch (state) {
     FirebaseReady(:final config) => FirebaseAuthenticationRepository(
       firebaseAuth: firebase_auth.FirebaseAuth.instance,
+      firestore: FirebaseFirestore.instance,
+      localSyncRepository: ref.watch(localSyncRepositoryProvider),
       config: config,
     ),
     FirebaseOfflineMode() || FirebaseStartupFailure() => null,

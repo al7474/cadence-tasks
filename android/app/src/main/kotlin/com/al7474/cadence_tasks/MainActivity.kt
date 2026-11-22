@@ -1,4 +1,4 @@
-package com.example.cadence_tasks
+package com.al7474.cadence_tasks
 
 import io.flutter.embedding.android.FlutterActivity
 

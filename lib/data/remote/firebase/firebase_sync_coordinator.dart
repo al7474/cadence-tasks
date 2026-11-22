@@ -234,6 +234,12 @@ final class FirebaseSyncCoordinator implements SyncCoordinator {
     var downloaded = 0;
     for (final change in snapshot.docChanges) {
       if (change.type == DocumentChangeType.removed) {
+        await _local.deleteRemoteRecord(
+          userId: _userId,
+          collectionName: collectionName,
+          recordId: change.doc.id,
+        );
+        downloaded++;
         continue;
       }
 

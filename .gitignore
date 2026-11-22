@@ -5,9 +5,15 @@
 .pub-cache/
 build/
 coverage/
+node_modules/
 .idea/
 *.iml
+firebase-debug.log
+firestore-debug.log
 .env
 .env.*
 !.env.example
+*.jks
+*.keystore
+key.properties
 **/firebase-adminsdk-*.json

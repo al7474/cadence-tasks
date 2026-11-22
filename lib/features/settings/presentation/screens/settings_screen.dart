@@ -1,6 +1,7 @@
 import 'package:cadence_tasks/app/providers.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/features/authentication/domain/auth_user.dart';
+import 'package:cadence_tasks/features/settings/presentation/screens/privacy_policy_screen.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_coordinator.dart';
 import 'package:cadence_tasks/infrastructure/firebase/firebase_bootstrap.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -52,16 +53,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Padding(
             padding: EdgeInsets.fromLTRB(8, 24, 8, 8),
             child: Text(
-              'Cadence Tasks MVP',
+              'Cadence Tasks',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              'Routines and tasks are available offline. '
-              'Cloud sync uses your own Firebase project and free-tier quota.',
+              'Routines and tasks are available offline. When signed in, '
+              'your data syncs to Cadence Tasks cloud storage.',
             ),
+          ),
+          if (firebaseState is FirebaseOfflineMode ||
+              (authState.asData != null &&
+                  authState.asData!.value == null)) ...[
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete local data'),
+                subtitle: const Text(
+                  'Remove tasks and routines saved only on this device or browser.',
+                ),
+                onTap: _isWorking ? null : _deleteLocalData,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy policy'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PrivacyPolicyScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -164,6 +193,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         ],
                       ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _isWorking ? null : _deleteAccount,
+                          icon: const Icon(Icons.delete_forever_outlined),
+                          label: const Text('Delete account and data'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -226,6 +268,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _deleteLocalData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete data on this device?'),
+        content: const Text(
+          'This permanently deletes all tasks, routines, and pending changes '
+          'saved in this app on this device or browser for every account. It '
+          'does not delete data stored in Firebase.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete local data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isWorking = true;
+    });
+    await ref.read(localSyncRepositoryProvider).deleteAllLocalData();
+    final notifications = await ref
+        .read(notificationSchedulerProvider)
+        .cancelAllReminders();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isWorking = false;
+    });
+    ref.invalidate(dailyAgendaProvider);
+    ref.invalidate(routinesProvider);
+    if (notifications case FailureResult<Unit>(:final failure)) {
+      _showError(
+        'Local data was deleted, but reminders could not be cancelled: '
+        '${failure.message}',
+      );
+    }
+  }
+
   Future<void> _synchronize() async {
     final coordinator = ref.read(syncCoordinatorProvider);
     if (coordinator == null) {
@@ -253,6 +347,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'Synced ${value.uploaded} uploaded and '
             '${value.downloaded} downloaded records.';
       case FailureResult<SyncSummary>(:final failure):
+        _showError(failure.message);
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete account and data?'),
+        content: const Text(
+          'This permanently deletes your Cadence Tasks account, all synced '
+          "tasks and routines, and this device's account data. Your Google "
+          'account will not be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final repository = ref.read(authenticationRepositoryProvider);
+    if (repository == null) {
+      _showError('Firebase is not configured.');
+      return;
+    }
+
+    setState(() {
+      _isWorking = true;
+    });
+    final result = await repository.deleteAccount();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isWorking = false;
+    });
+
+    switch (result) {
+      case Success<Unit>():
+        final notifications = await ref
+            .read(notificationSchedulerProvider)
+            .cancelAllReminders();
+        if (!mounted) {
+          return;
+        }
+        ref.invalidate(authStateProvider);
+        ref.invalidate(activeUserIdProvider);
+        ref.invalidate(dailyAgendaProvider);
+        ref.invalidate(routinesProvider);
+        if (notifications case FailureResult<Unit>(:final failure)) {
+          _showError(
+            'Account and data deleted, but reminders could not be cancelled: '
+            '${failure.message}',
+          );
+        }
+      case FailureResult<Unit>(:final failure):
         _showError(failure.message);
     }
   }

@@ -120,6 +120,38 @@ void main() {
     expect(notifications.scheduledItems.single.id, item.id);
   });
 
+  test('skipping a one-off task cancels its reminder', () async {
+    final scheduledDate = date(2026, 11, 21);
+    final task = oneOffTask(
+      id: 'task-skip',
+      title: 'Water the plants',
+      scheduledDate: scheduledDate,
+      scheduledTime: time(11, 0),
+      reminderEnabled: true,
+    );
+    await tasks.save(task);
+    final item = AgendaItem(
+      id: 'one-off:${task.id}',
+      sourceId: task.id,
+      sourceDate: task.scheduledDate,
+      title: task.title,
+      kind: AgendaItemKind.oneOff,
+      scheduledDate: task.scheduledDate,
+      scheduledTime: task.scheduledTime,
+      status: TaskStatus.pending,
+      reminderEnabled: true,
+    );
+
+    expect(
+      await controller.setStatus(item, TaskStatus.skipped),
+      isA<Success<Unit>>(),
+    );
+
+    final updated = valueOf(await tasks.getScheduledFor(scheduledDate));
+    expect(updated.single.status, TaskStatus.skipped);
+    expect(notifications.cancelledItemIds, contains(item.id));
+  });
+
   test('deleting a one-off task cancels its reminder', () async {
     final scheduledDate = date(2026, 11, 21);
     final task = oneOffTask(
@@ -178,6 +210,11 @@ final class _FakeNotificationScheduler implements NotificationScheduler {
 
   @override
   Future<Result<Unit>> cancelRoutineReminders(String routineId) async {
+    return const Success<Unit>(Unit.value);
+  }
+
+  @override
+  Future<Result<Unit>> cancelAllReminders() async {
     return const Success<Unit>(Unit.value);
   }
 }
