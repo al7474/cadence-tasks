@@ -177,14 +177,24 @@ jobs:
           build_tools="${ANDROID_HOME}/build-tools/$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n 1)"
           package_name="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE "s/^package: name='([^']+)'.*/\1/p")"
           native_abis="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE 's/^native-code: (.*)$/\1/p')"
-          signer_sha1="$("${build_tools}/apksigner" verify --print-certs "${apk_path}" | sed -nE 's/^Signer #1 certificate SHA-1 digest: ([[:xdigit:]:]+)$/\1/p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if ! signer_report="$("${build_tools}/apksigner" verify --print-certs "${apk_path}" 2>&1)"; then
+            echo "::error::apksigner could not verify the ARM64 APK."
+            printf '%s\n' "${signer_report}"
+            exit 1
+          fi
+          signer_sha1="$(printf '%s\n' "${signer_report}" | awk 'tolower($0) ~ /sha-1 digest:/ { digest = $NF; gsub(/[^[:xdigit:]]/, "", digest); print tolower(digest); exit }')"
           expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
           if [[ "${package_name}" != "com.al7474.cadence_tasks" || "${native_abis}" != "'arm64-v8a'" ]]; then
             echo "::error::The release APK must be Cadence Tasks for ARM64 only."
             exit 1
           fi
-          if [[ -z "${signer_sha1}" || "${signer_sha1}" != "${expected_sha1}" ]]; then
-            echo "::error::The APK signer SHA-1 is ${signer_sha1:-missing}; expected ${expected_sha1}."
+          if [[ -z "${signer_sha1}" ]]; then
+            echo "::error::Could not extract the APK signer SHA-1. apksigner output follows:"
+            printf '%s\n' "${signer_report}"
+            exit 1
+          fi
+          if [[ "${signer_sha1}" != "${expected_sha1}" ]]; then
+            echo "::error::The APK signer SHA-1 is ${signer_sha1}; expected ${expected_sha1}."
             exit 1
           fi
           cp "${apk_path}" "${release_asset}"
