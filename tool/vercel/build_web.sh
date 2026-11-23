@@ -27,6 +27,10 @@ elif [[ ! -x "${flutter_root}/bin/flutter" ]]; then
   mv "${temp_dir}/flutter" "${flutter_root}"
 fi
 
+if [[ -z "${CADENCE_FLUTTER_SDK_ROOT:-}" ]]; then
+  git config --global --add safe.directory "${flutter_root}"
+fi
+
 export PATH="${flutter_root}/bin:${PATH}"
 cd "${project_root}"
 
