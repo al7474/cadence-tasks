@@ -1,13 +1,12 @@
 # Android Release Procedure
 
-The Android release workflow publishes only the ARM64 APK after a new
+The Android release workflow builds only the ARM64 APK and publishes it after a new
 `vMAJOR.MINOR.PATCH` tag is pushed. It verifies the tag against `pubspec.yaml`,
-requires an increasing Android build number, runs analysis and tests, and
-creates a GitHub Release. It does not publish on ordinary branch pushes. The
-build may produce local APK variants for other ABIs, but they are not attached
-to the release. A failed tagged run can be retried from the **Android ARM64
-release** workflow by selecting the `main` branch and entering the existing
-tag, such as `v1.0.0`.
+requires an increasing Android build number, runs analysis and tests, caches
+Gradle dependencies, and creates a GitHub Release. It does not publish on
+ordinary branch pushes. A failed tagged run can be retried from the **Android
+ARM64 release** workflow by selecting the `main` branch and entering the
+existing tag, such as `v1.0.0`.
 
 ## One-time setup
 

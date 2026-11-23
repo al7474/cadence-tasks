@@ -41,6 +41,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.50.1"
@@ -165,7 +166,7 @@ jobs:
             exit 1
           fi
       - name: Build ARM64 APK
-        run: flutter build apk --release --split-per-abi --dart-define-from-file=.env
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define-from-file=.env
       - name: Publish GitHub Release
         shell: bash
         run: |
