@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cadence_tasks/app/providers.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/features/agenda/presentation/screens/today_screen.dart';
+import 'package:cadence_tasks/features/calendar/presentation/screens/calendar_screen.dart';
 import 'package:cadence_tasks/features/routines/presentation/screens/routines_screen.dart';
 import 'package:cadence_tasks/features/settings/presentation/screens/settings_screen.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_coordinator.dart';
@@ -26,7 +27,12 @@ class _HomeShellState extends ConsumerState<HomeShell>
   bool _hasPendingSyncMutations = false;
   Timer? _syncDebounce;
 
-  static const _pages = [TodayScreen(), RoutinesScreen(), SettingsScreen()];
+  static const _pages = [
+    TodayScreen(),
+    CalendarScreen(),
+    RoutinesScreen(),
+    SettingsScreen(),
+  ];
 
   @override
   void initState() {
@@ -111,6 +117,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
             icon: Icon(Icons.today_outlined),
             selectedIcon: Icon(Icons.today),
             label: 'Today',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_view_week_outlined),
+            selectedIcon: Icon(Icons.calendar_view_week),
+            label: 'Calendar',
           ),
           NavigationDestination(
             icon: Icon(Icons.repeat_outlined),

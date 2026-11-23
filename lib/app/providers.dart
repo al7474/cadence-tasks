@@ -5,6 +5,7 @@ import 'package:cadence_tasks/core/domain/local_date.dart';
 import 'package:cadence_tasks/core/domain/local_time.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/data/local/drift/app_database.dart';
+import 'package:cadence_tasks/data/local/drift/drift_calendar_display_settings_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_daily_agenda_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_one_off_task_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_routine_repository.dart';
@@ -17,6 +18,8 @@ import 'package:cadence_tasks/features/agenda/domain/use_cases/get_daily_agenda.
 import 'package:cadence_tasks/features/agenda/presentation/controllers/agenda_actions_controller.dart';
 import 'package:cadence_tasks/features/authentication/domain/auth_user.dart';
 import 'package:cadence_tasks/features/authentication/domain/authentication_repository.dart';
+import 'package:cadence_tasks/features/calendar/domain/calendar_display_settings.dart';
+import 'package:cadence_tasks/features/calendar/domain/calendar_display_settings_repository.dart';
 import 'package:cadence_tasks/features/routines/domain/repositories/routine_repository.dart';
 import 'package:cadence_tasks/features/routines/domain/routine_template.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_coordinator.dart';
@@ -163,6 +166,20 @@ final routinesProvider = FutureProvider<List<RoutineTemplate>>((ref) async {
     ),
   };
 });
+
+final calendarDisplaySettingsRepositoryProvider =
+    Provider<CalendarDisplaySettingsRepository>((ref) {
+      return DriftCalendarDisplaySettingsRepository(
+        ref.watch(appDatabaseProvider),
+        userId: ref.watch(activeUserIdProvider),
+      );
+    });
+
+final calendarDisplaySettingsProvider = StreamProvider<CalendarDisplaySettings>(
+  (ref) {
+    return ref.watch(calendarDisplaySettingsRepositoryProvider).watchSettings();
+  },
+);
 
 final syncCoordinatorProvider = Provider<SyncCoordinator?>((ref) {
   final user = ref.watch(authStateProvider).asData?.value;

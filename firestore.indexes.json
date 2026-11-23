@@ -41,6 +41,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "calendarPreferences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "updatedAtUtcMillis",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mutationId",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,10 +1,13 @@
 import 'dart:convert';
 
+import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/data/local/drift/app_database.dart';
+import 'package:cadence_tasks/data/local/drift/drift_calendar_display_settings_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_one_off_task_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_record_mappers.dart';
 import 'package:cadence_tasks/data/local/drift/drift_routine_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_sync_repository.dart';
+import 'package:cadence_tasks/features/calendar/domain/calendar_display_settings.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -143,6 +146,14 @@ void main() {
         database,
         userId: otherUserId,
       );
+      final targetCalendarSettings = DriftCalendarDisplaySettingsRepository(
+        database,
+        userId: targetUserId,
+      );
+      final otherCalendarSettings = DriftCalendarDisplaySettingsRepository(
+        database,
+        userId: otherUserId,
+      );
 
       await targetRoutines.save(
         routine(
@@ -186,6 +197,12 @@ void main() {
           scheduledDate: scheduledDate,
         ),
       );
+      await targetCalendarSettings.saveSettings(
+        calendarSettings(startHour: 7, endHour: 21),
+      );
+      await otherCalendarSettings.saveSettings(
+        calendarSettings(startHour: 8, endHour: 20),
+      );
       await syncRepository.saveCursor(
         targetUserId,
         'oneOffTasks',
@@ -208,6 +225,10 @@ void main() {
         valueOf(await targetTasks.getScheduledFor(scheduledDate)),
         isEmpty,
       );
+      expect(
+        await targetCalendarSettings.watchSettings().first,
+        CalendarDisplaySettings.defaults,
+      );
       expect(await syncRepository.pendingMutations(targetUserId), isEmpty);
       expect(
         await syncRepository.cursorFor(targetUserId, 'oneOffTasks'),
@@ -224,7 +245,11 @@ void main() {
         valueOf(await otherTasks.getScheduledFor(scheduledDate)),
         hasLength(1),
       );
-      expect(await syncRepository.pendingMutations(otherUserId), hasLength(3));
+      expect(
+        await otherCalendarSettings.watchSettings().first,
+        calendarSettings(startHour: 8, endHour: 20),
+      );
+      expect(await syncRepository.pendingMutations(otherUserId), hasLength(4));
     },
   );
 
@@ -305,4 +330,60 @@ void main() {
       expect(await syncRepository.pendingMutations('firebase-user-1'), isEmpty);
     },
   );
+
+  test(
+    'applies a newer remote calendar display preference and clears its outbox',
+    () async {
+      const userId = 'firebase-user-1';
+      final localSettings = DriftCalendarDisplaySettingsRepository(
+        database,
+        userId: userId,
+        clock: () => DateTime.utc(2026, 11, 22, 12),
+      );
+      final remoteUpdatedAt = DateTime.utc(2026, 11, 23, 12);
+      final remotePayload = <String, Object?>{
+        'userId': userId,
+        'id': DriftCalendarDisplaySettingsRepository.recordId,
+        'startHour': 9,
+        'endHour': 19,
+        'updatedAtUtcMillis': remoteUpdatedAt.millisecondsSinceEpoch,
+        'deletedAtUtcMillis': null,
+        'mutationId': 'remote-calendar-settings',
+      };
+
+      expect(
+        await localSettings.saveSettings(
+          calendarSettings(startHour: 7, endHour: 21),
+        ),
+        isA<Success<Unit>>(),
+      );
+      await syncRepository.applyRemoteRecord(
+        userId: userId,
+        collectionName: DriftCalendarDisplaySettingsRepository.collectionName,
+        recordId: DriftCalendarDisplaySettingsRepository.recordId,
+        payload: Map<String, dynamic>.from(remotePayload),
+      );
+
+      expect(
+        await localSettings.watchSettings().first,
+        calendarSettings(startHour: 9, endHour: 19),
+      );
+      expect(await syncRepository.pendingMutations(userId), isEmpty);
+    },
+  );
+}
+
+CalendarDisplaySettings calendarSettings({
+  required int startHour,
+  required int endHour,
+}) {
+  return switch (CalendarDisplaySettings.create(
+    startHour: startHour,
+    endHour: endHour,
+  )) {
+    Success<CalendarDisplaySettings>(:final value) => value,
+    FailureResult<CalendarDisplaySettings>(:final failure) => throw StateError(
+      failure.message,
+    ),
+  };
 }

@@ -1,3 +1,4 @@
+import 'package:cadence_tasks/data/local/drift/tables/calendar_display_settings.dart';
 import 'package:cadence_tasks/data/local/drift/tables/one_off_tasks.dart';
 import 'package:cadence_tasks/data/local/drift/tables/routine_occurrence_logs.dart';
 import 'package:cadence_tasks/data/local/drift/tables/routine_templates.dart';
@@ -10,6 +11,7 @@ part 'app_database.g.dart';
 
 @DriftDatabase(
   tables: [
+    CalendarDisplaySettingsTable,
     RoutineTemplates,
     RoutineOccurrenceLogs,
     OneOffTasks,
@@ -23,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,6 +33,9 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
         await migrator.createTable(syncCursors);
+      }
+      if (from < 3) {
+        await migrator.createTable(calendarDisplaySettingsTable);
       }
     },
   );

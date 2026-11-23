@@ -201,5 +201,51 @@ service cloud.firestore {
         ];
       allow delete: if signedInAs(userId);
     }
+
+    match /users/{userId}/calendarPreferences/{preferenceId} {
+      allow read: if signedInAs(userId);
+      allow create: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && preferenceId == 'display-hours'
+        && request.resource.data.id == preferenceId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'startHour',
+          'endHour',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.startHour is int
+        && request.resource.data.startHour >= 0
+        && request.resource.data.startHour <= 22
+        && request.resource.data.endHour is int
+        && request.resource.data.endHour > request.resource.data.startHour
+        && request.resource.data.endHour <= 23
+        && request.resource.data.deletedAtUtcMillis == null;
+      allow update: if signedInAs(userId)
+        && hasValidMetadata(userId)
+        && preferenceId == 'display-hours'
+        && request.resource.data.id == preferenceId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'id',
+          'startHour',
+          'endHour',
+          'updatedAtUtcMillis',
+          'deletedAtUtcMillis',
+          'mutationId'
+        ])
+        && request.resource.data.startHour is int
+        && request.resource.data.startHour >= 0
+        && request.resource.data.startHour <= 22
+        && request.resource.data.endHour is int
+        && request.resource.data.endHour > request.resource.data.startHour
+        && request.resource.data.endHour <= 23
+        && request.resource.data.deletedAtUtcMillis == null
+        && hasNewerVersion();
+      allow delete: if signedInAs(userId);
+    }
   }
 }

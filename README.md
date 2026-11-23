@@ -39,6 +39,11 @@ browser.
 
 - Today agenda combines recurring routine occurrences and one-off tasks, with
   complete, skip, snooze, reschedule, and delete actions where applicable.
+- Calendar provides a Monday-to-Sunday schedule with configurable visible
+  hours, defaulting to 6:00 AM through 10:00 PM. Change the range in Settings;
+  it is saved to the signed-in account and syncs across that account's devices.
+  On phones, select a day to see its schedule; on wider screens, view the full
+  week. Add a task or recurring routine from a date or time slot to prefill it.
 - Routines support daily, selected-weekday, and custom-interval recurrence.
 - Drift is the local source of truth on Android and Web, so agenda reads and
   writes work without a network connection.
@@ -93,9 +98,9 @@ The app runs offline without Firebase configuration. To enable account sync:
 
 The options in `.env` are public client configuration, not service-account
 secrets. Never add private keys or service-account credentials to the Flutter
-application. Firestore Security Rules restrict all task documents to the
-authenticated user's UID. Signed-in users can permanently delete their Cadence
-Tasks account and synced records from Settings.
+application. Firestore Security Rules restrict task documents and calendar
+display preferences to the authenticated user's UID. Signed-in users can
+permanently delete their Cadence Tasks account and synced records from Settings.
 
 ## Vercel Web deployment
 

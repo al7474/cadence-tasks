@@ -16,9 +16,14 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 class TaskEditorSheet extends ConsumerStatefulWidget {
-  const TaskEditorSheet({required this.initialDate, super.key});
+  const TaskEditorSheet({
+    required this.initialDate,
+    this.initialTime,
+    super.key,
+  });
 
   final LocalDate initialDate;
+  final LocalTime? initialTime;
 
   @override
   ConsumerState<TaskEditorSheet> createState() => _TaskEditorSheetState();
@@ -38,6 +43,7 @@ class _TaskEditorSheetState extends ConsumerState<TaskEditorSheet> {
   void initState() {
     super.initState();
     _scheduledDate = widget.initialDate;
+    _scheduledTime = widget.initialTime;
   }
 
   @override

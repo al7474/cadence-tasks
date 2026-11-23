@@ -27,6 +27,7 @@ final class FirebaseSyncCoordinator implements SyncCoordinator {
     'routineTemplates',
     'routineOccurrenceLogs',
     'oneOffTasks',
+    'calendarPreferences',
   ];
   static const _pullPageSize = 200;
 

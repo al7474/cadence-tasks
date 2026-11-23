@@ -3,6 +3,390 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $CalendarDisplaySettingsTableTable extends CalendarDisplaySettingsTable
+    with
+        TableInfo<
+          $CalendarDisplaySettingsTableTable,
+          CalendarDisplaySettingsRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CalendarDisplaySettingsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startHourMeta = const VerificationMeta(
+    'startHour',
+  );
+  @override
+  late final GeneratedColumn<int> startHour = GeneratedColumn<int>(
+    'start_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endHourMeta = const VerificationMeta(
+    'endHour',
+  );
+  @override
+  late final GeneratedColumn<int> endHour = GeneratedColumn<int>(
+    'end_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMillisMeta =
+      const VerificationMeta('updatedAtUtcMillis');
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMillis = GeneratedColumn<int>(
+    'updated_at_utc_millis',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mutationIdMeta = const VerificationMeta(
+    'mutationId',
+  );
+  @override
+  late final GeneratedColumn<String> mutationId = GeneratedColumn<String>(
+    'mutation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    startHour,
+    endHour,
+    updatedAtUtcMillis,
+    mutationId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'calendar_display_settings_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CalendarDisplaySettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('start_hour')) {
+      context.handle(
+        _startHourMeta,
+        startHour.isAcceptableOrUnknown(data['start_hour']!, _startHourMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startHourMeta);
+    }
+    if (data.containsKey('end_hour')) {
+      context.handle(
+        _endHourMeta,
+        endHour.isAcceptableOrUnknown(data['end_hour']!, _endHourMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endHourMeta);
+    }
+    if (data.containsKey('updated_at_utc_millis')) {
+      context.handle(
+        _updatedAtUtcMillisMeta,
+        updatedAtUtcMillis.isAcceptableOrUnknown(
+          data['updated_at_utc_millis']!,
+          _updatedAtUtcMillisMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMillisMeta);
+    }
+    if (data.containsKey('mutation_id')) {
+      context.handle(
+        _mutationIdMeta,
+        mutationId.isAcceptableOrUnknown(data['mutation_id']!, _mutationIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mutationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  CalendarDisplaySettingsRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CalendarDisplaySettingsRow(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      startHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_hour'],
+      )!,
+      endHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_hour'],
+      )!,
+      updatedAtUtcMillis: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_millis'],
+      )!,
+      mutationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mutation_id'],
+      )!,
+    );
+  }
+
+  @override
+  $CalendarDisplaySettingsTableTable createAlias(String alias) {
+    return $CalendarDisplaySettingsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CalendarDisplaySettingsRow extends DataClass
+    implements Insertable<CalendarDisplaySettingsRow> {
+  final String userId;
+  final int startHour;
+  final int endHour;
+  final int updatedAtUtcMillis;
+  final String mutationId;
+  const CalendarDisplaySettingsRow({
+    required this.userId,
+    required this.startHour,
+    required this.endHour,
+    required this.updatedAtUtcMillis,
+    required this.mutationId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['start_hour'] = Variable<int>(startHour);
+    map['end_hour'] = Variable<int>(endHour);
+    map['updated_at_utc_millis'] = Variable<int>(updatedAtUtcMillis);
+    map['mutation_id'] = Variable<String>(mutationId);
+    return map;
+  }
+
+  CalendarDisplaySettingsTableCompanion toCompanion(bool nullToAbsent) {
+    return CalendarDisplaySettingsTableCompanion(
+      userId: Value(userId),
+      startHour: Value(startHour),
+      endHour: Value(endHour),
+      updatedAtUtcMillis: Value(updatedAtUtcMillis),
+      mutationId: Value(mutationId),
+    );
+  }
+
+  factory CalendarDisplaySettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CalendarDisplaySettingsRow(
+      userId: serializer.fromJson<String>(json['userId']),
+      startHour: serializer.fromJson<int>(json['startHour']),
+      endHour: serializer.fromJson<int>(json['endHour']),
+      updatedAtUtcMillis: serializer.fromJson<int>(json['updatedAtUtcMillis']),
+      mutationId: serializer.fromJson<String>(json['mutationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'startHour': serializer.toJson<int>(startHour),
+      'endHour': serializer.toJson<int>(endHour),
+      'updatedAtUtcMillis': serializer.toJson<int>(updatedAtUtcMillis),
+      'mutationId': serializer.toJson<String>(mutationId),
+    };
+  }
+
+  CalendarDisplaySettingsRow copyWith({
+    String? userId,
+    int? startHour,
+    int? endHour,
+    int? updatedAtUtcMillis,
+    String? mutationId,
+  }) => CalendarDisplaySettingsRow(
+    userId: userId ?? this.userId,
+    startHour: startHour ?? this.startHour,
+    endHour: endHour ?? this.endHour,
+    updatedAtUtcMillis: updatedAtUtcMillis ?? this.updatedAtUtcMillis,
+    mutationId: mutationId ?? this.mutationId,
+  );
+  CalendarDisplaySettingsRow copyWithCompanion(
+    CalendarDisplaySettingsTableCompanion data,
+  ) {
+    return CalendarDisplaySettingsRow(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      startHour: data.startHour.present ? data.startHour.value : this.startHour,
+      endHour: data.endHour.present ? data.endHour.value : this.endHour,
+      updatedAtUtcMillis: data.updatedAtUtcMillis.present
+          ? data.updatedAtUtcMillis.value
+          : this.updatedAtUtcMillis,
+      mutationId: data.mutationId.present
+          ? data.mutationId.value
+          : this.mutationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarDisplaySettingsRow(')
+          ..write('userId: $userId, ')
+          ..write('startHour: $startHour, ')
+          ..write('endHour: $endHour, ')
+          ..write('updatedAtUtcMillis: $updatedAtUtcMillis, ')
+          ..write('mutationId: $mutationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(userId, startHour, endHour, updatedAtUtcMillis, mutationId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CalendarDisplaySettingsRow &&
+          other.userId == this.userId &&
+          other.startHour == this.startHour &&
+          other.endHour == this.endHour &&
+          other.updatedAtUtcMillis == this.updatedAtUtcMillis &&
+          other.mutationId == this.mutationId);
+}
+
+class CalendarDisplaySettingsTableCompanion
+    extends UpdateCompanion<CalendarDisplaySettingsRow> {
+  final Value<String> userId;
+  final Value<int> startHour;
+  final Value<int> endHour;
+  final Value<int> updatedAtUtcMillis;
+  final Value<String> mutationId;
+  final Value<int> rowid;
+  const CalendarDisplaySettingsTableCompanion({
+    this.userId = const Value.absent(),
+    this.startHour = const Value.absent(),
+    this.endHour = const Value.absent(),
+    this.updatedAtUtcMillis = const Value.absent(),
+    this.mutationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CalendarDisplaySettingsTableCompanion.insert({
+    required String userId,
+    required int startHour,
+    required int endHour,
+    required int updatedAtUtcMillis,
+    required String mutationId,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       startHour = Value(startHour),
+       endHour = Value(endHour),
+       updatedAtUtcMillis = Value(updatedAtUtcMillis),
+       mutationId = Value(mutationId);
+  static Insertable<CalendarDisplaySettingsRow> custom({
+    Expression<String>? userId,
+    Expression<int>? startHour,
+    Expression<int>? endHour,
+    Expression<int>? updatedAtUtcMillis,
+    Expression<String>? mutationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (startHour != null) 'start_hour': startHour,
+      if (endHour != null) 'end_hour': endHour,
+      if (updatedAtUtcMillis != null)
+        'updated_at_utc_millis': updatedAtUtcMillis,
+      if (mutationId != null) 'mutation_id': mutationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CalendarDisplaySettingsTableCompanion copyWith({
+    Value<String>? userId,
+    Value<int>? startHour,
+    Value<int>? endHour,
+    Value<int>? updatedAtUtcMillis,
+    Value<String>? mutationId,
+    Value<int>? rowid,
+  }) {
+    return CalendarDisplaySettingsTableCompanion(
+      userId: userId ?? this.userId,
+      startHour: startHour ?? this.startHour,
+      endHour: endHour ?? this.endHour,
+      updatedAtUtcMillis: updatedAtUtcMillis ?? this.updatedAtUtcMillis,
+      mutationId: mutationId ?? this.mutationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (startHour.present) {
+      map['start_hour'] = Variable<int>(startHour.value);
+    }
+    if (endHour.present) {
+      map['end_hour'] = Variable<int>(endHour.value);
+    }
+    if (updatedAtUtcMillis.present) {
+      map['updated_at_utc_millis'] = Variable<int>(updatedAtUtcMillis.value);
+    }
+    if (mutationId.present) {
+      map['mutation_id'] = Variable<String>(mutationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarDisplaySettingsTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('startHour: $startHour, ')
+          ..write('endHour: $endHour, ')
+          ..write('updatedAtUtcMillis: $updatedAtUtcMillis, ')
+          ..write('mutationId: $mutationId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $RoutineTemplatesTable extends RoutineTemplates
     with TableInfo<$RoutineTemplatesTable, RoutineTemplateRow> {
   @override
@@ -3340,6 +3724,8 @@ class SyncOutboxEntriesCompanion extends UpdateCompanion<SyncOutboxEntryRow> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $CalendarDisplaySettingsTableTable calendarDisplaySettingsTable =
+      $CalendarDisplaySettingsTableTable(this);
   late final $RoutineTemplatesTable routineTemplates = $RoutineTemplatesTable(
     this,
   );
@@ -3354,6 +3740,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    calendarDisplaySettingsTable,
     routineTemplates,
     routineOccurrenceLogs,
     oneOffTasks,
@@ -3362,6 +3749,241 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ];
 }
 
+typedef $$CalendarDisplaySettingsTableTableCreateCompanionBuilder =
+    CalendarDisplaySettingsTableCompanion Function({
+      required String userId,
+      required int startHour,
+      required int endHour,
+      required int updatedAtUtcMillis,
+      required String mutationId,
+      Value<int> rowid,
+    });
+typedef $$CalendarDisplaySettingsTableTableUpdateCompanionBuilder =
+    CalendarDisplaySettingsTableCompanion Function({
+      Value<String> userId,
+      Value<int> startHour,
+      Value<int> endHour,
+      Value<int> updatedAtUtcMillis,
+      Value<String> mutationId,
+      Value<int> rowid,
+    });
+
+class $$CalendarDisplaySettingsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CalendarDisplaySettingsTableTable> {
+  $$CalendarDisplaySettingsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startHour => $composableBuilder(
+    column: $table.startHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endHour => $composableBuilder(
+    column: $table.endHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMillis => $composableBuilder(
+    column: $table.updatedAtUtcMillis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mutationId => $composableBuilder(
+    column: $table.mutationId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CalendarDisplaySettingsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CalendarDisplaySettingsTableTable> {
+  $$CalendarDisplaySettingsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startHour => $composableBuilder(
+    column: $table.startHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endHour => $composableBuilder(
+    column: $table.endHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMillis => $composableBuilder(
+    column: $table.updatedAtUtcMillis,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mutationId => $composableBuilder(
+    column: $table.mutationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CalendarDisplaySettingsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CalendarDisplaySettingsTableTable> {
+  $$CalendarDisplaySettingsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<int> get startHour =>
+      $composableBuilder(column: $table.startHour, builder: (column) => column);
+
+  GeneratedColumn<int> get endHour =>
+      $composableBuilder(column: $table.endHour, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtUtcMillis => $composableBuilder(
+    column: $table.updatedAtUtcMillis,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mutationId => $composableBuilder(
+    column: $table.mutationId,
+    builder: (column) => column,
+  );
+}
+
+class $$CalendarDisplaySettingsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CalendarDisplaySettingsTableTable,
+          CalendarDisplaySettingsRow,
+          $$CalendarDisplaySettingsTableTableFilterComposer,
+          $$CalendarDisplaySettingsTableTableOrderingComposer,
+          $$CalendarDisplaySettingsTableTableAnnotationComposer,
+          $$CalendarDisplaySettingsTableTableCreateCompanionBuilder,
+          $$CalendarDisplaySettingsTableTableUpdateCompanionBuilder,
+          (
+            CalendarDisplaySettingsRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CalendarDisplaySettingsTableTable,
+              CalendarDisplaySettingsRow
+            >,
+          ),
+          CalendarDisplaySettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$CalendarDisplaySettingsTableTableTableManager(
+    _$AppDatabase db,
+    $CalendarDisplaySettingsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CalendarDisplaySettingsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CalendarDisplaySettingsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CalendarDisplaySettingsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<int> startHour = const Value.absent(),
+                Value<int> endHour = const Value.absent(),
+                Value<int> updatedAtUtcMillis = const Value.absent(),
+                Value<String> mutationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarDisplaySettingsTableCompanion(
+                userId: userId,
+                startHour: startHour,
+                endHour: endHour,
+                updatedAtUtcMillis: updatedAtUtcMillis,
+                mutationId: mutationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required int startHour,
+                required int endHour,
+                required int updatedAtUtcMillis,
+                required String mutationId,
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarDisplaySettingsTableCompanion.insert(
+                userId: userId,
+                startHour: startHour,
+                endHour: endHour,
+                updatedAtUtcMillis: updatedAtUtcMillis,
+                mutationId: mutationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $CalendarDisplaySettingsTableTable,
+                    CalendarDisplaySettingsRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CalendarDisplaySettingsTableTable,
+                    CalendarDisplaySettingsRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CalendarDisplaySettingsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CalendarDisplaySettingsTableTable,
+      CalendarDisplaySettingsRow,
+      $$CalendarDisplaySettingsTableTableFilterComposer,
+      $$CalendarDisplaySettingsTableTableOrderingComposer,
+      $$CalendarDisplaySettingsTableTableAnnotationComposer,
+      $$CalendarDisplaySettingsTableTableCreateCompanionBuilder,
+      $$CalendarDisplaySettingsTableTableUpdateCompanionBuilder,
+      (
+        CalendarDisplaySettingsRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CalendarDisplaySettingsTableTable,
+          CalendarDisplaySettingsRow
+        >,
+      ),
+      CalendarDisplaySettingsRow,
+      PrefetchHooks Function()
+    >;
 typedef $$RoutineTemplatesTableCreateCompanionBuilder =
     RoutineTemplatesCompanion Function({
       required String userId,
@@ -5035,6 +5657,12 @@ typedef $$SyncOutboxEntriesTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$CalendarDisplaySettingsTableTableTableManager
+  get calendarDisplaySettingsTable =>
+      $$CalendarDisplaySettingsTableTableTableManager(
+        _db,
+        _db.calendarDisplaySettingsTable,
+      );
   $$RoutineTemplatesTableTableManager get routineTemplates =>
       $$RoutineTemplatesTableTableManager(_db, _db.routineTemplates);
   $$RoutineOccurrenceLogsTableTableManager get routineOccurrenceLogs =>

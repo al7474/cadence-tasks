@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/data/local/drift/app_database.dart';
+import 'package:cadence_tasks/data/local/drift/drift_calendar_display_settings_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_record_mappers.dart';
+import 'package:cadence_tasks/features/calendar/domain/calendar_display_settings.dart';
 import 'package:cadence_tasks/features/synchronization/domain/conflict_resolver.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_version.dart';
 import 'package:drift/drift.dart';
@@ -65,6 +67,10 @@ final class DriftSyncRepository {
       'routineTemplates' => await _routineVersion(userId, recordId),
       'routineOccurrenceLogs' => await _occurrenceVersion(userId, recordId),
       'oneOffTasks' => await _oneOffVersion(userId, recordId),
+      'calendarPreferences' => await _calendarDisplaySettingsVersion(
+        userId,
+        recordId,
+      ),
       _ => throw ArgumentError.value(
         collectionName,
         'collectionName',
@@ -94,6 +100,7 @@ final class DriftSyncRepository {
       await _database.delete(_database.routineOccurrenceLogs).go();
       await _database.delete(_database.routineTemplates).go();
       await _database.delete(_database.oneOffTasks).go();
+      await _database.delete(_database.calendarDisplaySettingsTable).go();
       await _database.delete(_database.syncOutboxEntries).go();
       await _database.delete(_database.syncCursors).go();
     });
@@ -109,6 +116,9 @@ final class DriftSyncRepository {
       )..where((row) => row.userId.equals(userId))).go();
       await (_database.delete(
         _database.oneOffTasks,
+      )..where((row) => row.userId.equals(userId))).go();
+      await (_database.delete(
+        _database.calendarDisplaySettingsTable,
       )..where((row) => row.userId.equals(userId))).go();
       await (_database.delete(
         _database.syncOutboxEntries,
@@ -150,6 +160,15 @@ final class DriftSyncRepository {
                 (row) => row.userId.equals(userId) & row.id.equals(recordId),
               ))
               .go();
+        case 'calendarPreferences':
+          if (recordId != DriftCalendarDisplaySettingsRepository.recordId) {
+            throw const FormatException(
+              'The remote calendar preference ID is invalid.',
+            );
+          }
+          await (_database.delete(
+            _database.calendarDisplaySettingsTable,
+          )..where((row) => row.userId.equals(userId))).go();
         default:
           throw FormatException('Unknown sync collection: $collectionName.');
       }
@@ -238,6 +257,32 @@ final class DriftSyncRepository {
                   deletedAtUtc: deletedAtUtc,
                 ),
               );
+        case 'calendarPreferences':
+          if (recordId != DriftCalendarDisplaySettingsRepository.recordId) {
+            throw const FormatException(
+              'The remote calendar preference ID is invalid.',
+            );
+          }
+          final settingsResult = CalendarDisplaySettings.create(
+            startHour: _requiredInt(payload, 'startHour'),
+            endHour: _requiredInt(payload, 'endHour'),
+          );
+          switch (settingsResult) {
+            case FailureResult<CalendarDisplaySettings>(:final failure):
+              throw FormatException(failure.message);
+            case Success<CalendarDisplaySettings>(:final value):
+              await _database
+                  .into(_database.calendarDisplaySettingsTable)
+                  .insertOnConflictUpdate(
+                    CalendarDisplaySettingsTableCompanion.insert(
+                      userId: userId,
+                      startHour: value.startHour,
+                      endHour: value.endHour,
+                      updatedAtUtcMillis: updatedAtUtc.millisecondsSinceEpoch,
+                      mutationId: mutationId,
+                    ),
+                  );
+          }
         default:
           throw FormatException('Unknown sync collection: $collectionName.');
       }
@@ -255,6 +300,7 @@ final class DriftSyncRepository {
       await _claimRoutines(userId);
       await _claimOccurrences(userId);
       await _claimOneOffTasks(userId);
+      await _claimCalendarDisplaySettings(userId);
       await _claimOutbox(userId);
       await (_database.delete(
         _database.syncCursors,
@@ -304,6 +350,24 @@ final class DriftSyncRepository {
               (task) => task.userId.equals(userId) & task.id.equals(recordId),
             ))
             .getSingleOrNull();
+    return row == null
+        ? null
+        : _version(row.updatedAtUtcMillis, row.mutationId);
+  }
+
+  Future<SyncVersion?> _calendarDisplaySettingsVersion(
+    String userId,
+    String recordId,
+  ) async {
+    if (recordId != DriftCalendarDisplaySettingsRepository.recordId) {
+      throw const FormatException(
+        'The calendar preference record ID is invalid.',
+      );
+    }
+
+    final row = await (_database.select(
+      _database.calendarDisplaySettingsTable,
+    )..where((settings) => settings.userId.equals(userId))).getSingleOrNull();
     return row == null
         ? null
         : _version(row.updatedAtUtcMillis, row.mutationId);
@@ -444,6 +508,38 @@ final class DriftSyncRepository {
         ),
       );
     }
+  }
+
+  Future<void> _claimCalendarDisplaySettings(String userId) async {
+    final guestSettings =
+        await (_database.select(_database.calendarDisplaySettingsTable)
+              ..where((settings) => settings.userId.equals(guestUserId)))
+            .getSingleOrNull();
+    if (guestSettings == null) {
+      return;
+    }
+
+    final accountSettings = await (_database.select(
+      _database.calendarDisplaySettingsTable,
+    )..where((settings) => settings.userId.equals(userId))).getSingleOrNull();
+    if (accountSettings == null ||
+        _isLocalVersionNewer(
+          localUpdatedAtUtcMillis: guestSettings.updatedAtUtcMillis,
+          localMutationId: guestSettings.mutationId,
+          existingUpdatedAtUtcMillis: accountSettings.updatedAtUtcMillis,
+          existingMutationId: accountSettings.mutationId,
+        )) {
+      await _database
+          .into(_database.calendarDisplaySettingsTable)
+          .insertOnConflictUpdate(
+            guestSettings
+                .toCompanion(true)
+                .copyWith(userId: Value<String>(userId)),
+          );
+    }
+    await (_database.delete(
+      _database.calendarDisplaySettingsTable,
+    )..where((settings) => settings.userId.equals(guestUserId))).go();
   }
 
   static bool _isLocalVersionNewer({

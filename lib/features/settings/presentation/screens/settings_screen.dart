@@ -2,6 +2,7 @@ import 'package:cadence_tasks/app/providers.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/features/authentication/domain/auth_user.dart';
 import 'package:cadence_tasks/features/settings/presentation/screens/privacy_policy_screen.dart';
+import 'package:cadence_tasks/features/settings/presentation/widgets/calendar_hours_card.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_coordinator.dart';
 import 'package:cadence_tasks/infrastructure/firebase/firebase_bootstrap.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -32,6 +33,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const CalendarHoursCard(),
+          const SizedBox(height: 8),
           Card(
             child: ListTile(
               leading: Icon(

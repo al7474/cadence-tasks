@@ -28,6 +28,7 @@ final class FirebaseAuthenticationRepository
     'routineTemplates',
     'routineOccurrenceLogs',
     'oneOffTasks',
+    'calendarPreferences',
   ];
 
   final firebase_auth.FirebaseAuth _firebaseAuth;

@@ -14,9 +14,16 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 class RoutineEditorSheet extends ConsumerStatefulWidget {
-  const RoutineEditorSheet({this.routine, super.key});
+  const RoutineEditorSheet({
+    this.routine,
+    this.initialDate,
+    this.initialTime,
+    super.key,
+  });
 
   final RoutineTemplate? routine;
+  final LocalDate? initialDate;
+  final LocalTime? initialTime;
 
   @override
   ConsumerState<RoutineEditorSheet> createState() => _RoutineEditorSheetState();
@@ -46,8 +53,12 @@ class _RoutineEditorSheetState extends ConsumerState<RoutineEditorSheet> {
     _intervalController = TextEditingController(
       text: _intervalFor(routine?.recurrence).toString(),
     );
-    _startDate = routine?.startDate ?? LocalDate.fromDateTime(DateTime.now());
-    _targetTime = routine?.targetTime ?? _localTime(7, 30);
+    _startDate =
+        routine?.startDate ??
+        widget.initialDate ??
+        LocalDate.fromDateTime(DateTime.now());
+    _targetTime =
+        routine?.targetTime ?? widget.initialTime ?? _localTime(7, 30);
     _recurrenceMode = _modeFor(routine?.recurrence);
     _weekdays = _weekdaysFor(routine?.recurrence);
     _reminderEnabled = routine?.reminderEnabled ?? !kIsWeb;

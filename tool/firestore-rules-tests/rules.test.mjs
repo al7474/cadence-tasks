@@ -156,3 +156,53 @@ test('unauthenticated clients cannot access user task documents', async () => {
     }),
   );
 });
+
+test('calendar display hours sync only to their authenticated account', async () => {
+  await testEnvironment.clearFirestore();
+
+  const ownerId = 'calendar-owner';
+  const ownerFirestore = testEnvironment.authenticatedContext(ownerId).firestore();
+  const otherFirestore = testEnvironment
+    .authenticatedContext('calendar-other')
+    .firestore();
+  const preferencePath = `users/${ownerId}/calendarPreferences/display-hours`;
+  const ownerReference = doc(ownerFirestore, preferencePath);
+  const otherReference = doc(otherFirestore, preferencePath);
+  const preference = {
+    userId: ownerId,
+    id: 'display-hours',
+    startHour: 6,
+    endHour: 22,
+    updatedAtUtcMillis: 100,
+    deletedAtUtcMillis: null,
+    mutationId: 'calendar-mutation-1',
+  };
+
+  await assertSucceeds(setDoc(ownerReference, preference));
+  await assertSucceeds(getDoc(ownerReference));
+  await assertFails(getDoc(otherReference));
+  await assertFails(
+    setDoc(doc(ownerFirestore, `users/${ownerId}/calendarPreferences/other`), {
+      ...preference,
+      id: 'other',
+    }),
+  );
+  await assertFails(
+    updateDoc(ownerReference, {
+      startHour: 22,
+      endHour: 22,
+      updatedAtUtcMillis: 200,
+      mutationId: 'calendar-mutation-invalid',
+    }),
+  );
+  await assertSucceeds(
+    updateDoc(ownerReference, {
+      startHour: 8,
+      endHour: 20,
+      updatedAtUtcMillis: 200,
+      mutationId: 'calendar-mutation-2',
+    }),
+  );
+  await assertFails(deleteDoc(otherReference));
+  await assertSucceeds(deleteDoc(ownerReference));
+});
