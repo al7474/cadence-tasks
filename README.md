@@ -97,6 +97,35 @@ application. Firestore Security Rules restrict all task documents to the
 authenticated user's UID. Signed-in users can permanently delete their Cadence
 Tasks account and synced records from Settings.
 
+## Vercel Web deployment
+
+The Web companion is a static Flutter build hosted on Vercel; Firebase
+Authentication and Firestore remain the backend. The root `vercel.json` selects
+the Flutter build script and publishes only `build/web`.
+
+1. Import `al7474/pulse-routines` into Vercel and keep the repository root as
+   the Root Directory. Vercel detects the custom `vercel.json` build command.
+2. In **Project Settings > Environment Variables**, add the Firebase Web values
+   from the local `.env` file:
+   `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID`,
+   `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_WEB_APP_ID`, and
+   `FIREBASE_AUTH_DOMAIN`. `FIREBASE_STORAGE_BUCKET` is optional. The Android
+   app ID and Google server client ID are not required by the Web sign-in flow.
+3. Assign the values to the Production and Preview environments. Flutter reads
+   them at build time; `tool/vercel/build_web.sh` writes a temporary Dart-define
+   JSON file and removes it when the build ends.
+4. Deploy the project. Each push to the production branch creates a production
+   deployment; pull requests can create preview deployments.
+5. Add the production `*.vercel.app` hostname, or your custom hostname, to
+   **Firebase Console > Authentication > Settings > Authorized domains**.
+   The existing Firebase `authDomain` remains
+   `cadence-tasks-f2639.firebaseapp.com`.
+
+The Firebase Web configuration is public client configuration and will be
+embedded in the generated JavaScript. Never add a service-account key,
+keystore, or private credentials to Vercel environment variables for this Web
+build. Exact local notifications are available only in the Android app.
+
 ## Android releases
 
 The permanent Android application ID is `com.al7474.cadence_tasks`. Do not
