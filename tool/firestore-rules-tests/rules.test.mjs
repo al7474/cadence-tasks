@@ -43,6 +43,7 @@ test('users can create, update, and delete only their own task documents', async
     notes: null,
     scheduledDate: '2026-11-22',
     scheduledTimeMinutes: null,
+    durationMinutes: null,
     reminderEnabled: false,
     status: 'pending',
     completedAtUtcMillis: null,
@@ -96,6 +97,7 @@ test('users can create, update, and delete only their own task documents', async
       startDate: '2026-11-22',
       endDate: null,
       targetTimeMinutes: 480,
+      durationMinutes: null,
       recurrenceKind: 'daily',
       weekdaysMask: 0,
       intervalDays: null,
@@ -154,6 +156,95 @@ test('unauthenticated clients cannot access user task documents', async () => {
       updatedAtUtcMillis: 100,
       mutationId: 'mutation-1',
     }),
+  );
+});
+
+test('calendar task durations require a timed start and must end before midnight', async () => {
+  await testEnvironment.clearFirestore();
+
+  const ownerId = 'duration-owner';
+  const firestore = testEnvironment.authenticatedContext(ownerId).firestore();
+  const baseTask = {
+    userId: ownerId,
+    title: 'Focus session',
+    notes: null,
+    scheduledDate: '2026-11-24',
+    reminderEnabled: false,
+    status: 'pending',
+    completedAtUtcMillis: null,
+    snoozedUntilUtcMillis: null,
+    updatedAtUtcMillis: 100,
+    deletedAtUtcMillis: null,
+    mutationId: 'duration-mutation-1',
+  };
+
+  await assertSucceeds(
+    setDoc(doc(firestore, `users/${ownerId}/oneOffTasks/timed-task`), {
+      ...baseTask,
+      id: 'timed-task',
+      scheduledTimeMinutes: 600,
+      durationMinutes: 90,
+    }),
+  );
+  await assertFails(
+    setDoc(doc(firestore, `users/${ownerId}/oneOffTasks/untimed-duration`), {
+      ...baseTask,
+      id: 'untimed-duration',
+      scheduledTimeMinutes: null,
+      durationMinutes: 30,
+    }),
+  );
+  await assertFails(
+    setDoc(doc(firestore, `users/${ownerId}/oneOffTasks/overnight-task`), {
+      ...baseTask,
+      id: 'overnight-task',
+      scheduledTimeMinutes: 1430,
+      durationMinutes: 30,
+    }),
+  );
+
+  await assertSucceeds(
+    setDoc(doc(firestore, `users/${ownerId}/routineTemplates/timed-routine`), {
+      userId: ownerId,
+      id: 'timed-routine',
+      title: 'Reading',
+      notes: null,
+      startDate: '2026-11-24',
+      endDate: null,
+      targetTimeMinutes: 1320,
+      durationMinutes: 120,
+      recurrenceKind: 'daily',
+      weekdaysMask: 0,
+      intervalDays: null,
+      reminderEnabled: false,
+      isEnabled: true,
+      updatedAtUtcMillis: 100,
+      deletedAtUtcMillis: null,
+      mutationId: 'routine-duration-1',
+    }),
+  );
+  await assertFails(
+    setDoc(
+      doc(firestore, `users/${ownerId}/routineTemplates/overnight-routine`),
+      {
+        userId: ownerId,
+        id: 'overnight-routine',
+        title: 'Reading',
+        notes: null,
+        startDate: '2026-11-24',
+        endDate: null,
+        targetTimeMinutes: 1380,
+        durationMinutes: 90,
+        recurrenceKind: 'daily',
+        weekdaysMask: 0,
+        intervalDays: null,
+        reminderEnabled: false,
+        isEnabled: true,
+        updatedAtUtcMillis: 100,
+        deletedAtUtcMillis: null,
+        mutationId: 'routine-duration-2',
+      },
+    ),
   );
 });
 

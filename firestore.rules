@@ -20,6 +20,29 @@ service cloud.firestore {
         );
     }
 
+    function hasValidRoutineDuration() {
+      return !request.resource.data.keys().hasAny(['durationMinutes'])
+        || request.resource.data.durationMinutes == null
+        || (
+          request.resource.data.durationMinutes is int
+          && request.resource.data.durationMinutes > 0
+          && request.resource.data.targetTimeMinutes
+            + request.resource.data.durationMinutes <= 1440
+        );
+    }
+
+    function hasValidOneOffDuration() {
+      return !request.resource.data.keys().hasAny(['durationMinutes'])
+        || request.resource.data.durationMinutes == null
+        || (
+          request.resource.data.durationMinutes is int
+          && request.resource.data.durationMinutes > 0
+          && request.resource.data.scheduledTimeMinutes is int
+          && request.resource.data.scheduledTimeMinutes
+            + request.resource.data.durationMinutes <= 1440
+        );
+    }
+
     match /users/{userId}/routineTemplates/{routineId} {
       allow read: if signedInAs(userId);
       allow create: if signedInAs(userId)
@@ -33,6 +56,7 @@ service cloud.firestore {
           'startDate',
           'endDate',
           'targetTimeMinutes',
+          'durationMinutes',
           'recurrenceKind',
           'weekdaysMask',
           'intervalDays',
@@ -47,6 +71,7 @@ service cloud.firestore {
         && request.resource.data.targetTimeMinutes is int
         && request.resource.data.targetTimeMinutes >= 0
         && request.resource.data.targetTimeMinutes < 1440
+        && hasValidRoutineDuration()
         && request.resource.data.recurrenceKind in [
           'daily',
           'weekdays',
@@ -65,6 +90,7 @@ service cloud.firestore {
           'startDate',
           'endDate',
           'targetTimeMinutes',
+          'durationMinutes',
           'recurrenceKind',
           'weekdaysMask',
           'intervalDays',
@@ -80,6 +106,7 @@ service cloud.firestore {
         && request.resource.data.targetTimeMinutes is int
         && request.resource.data.targetTimeMinutes >= 0
         && request.resource.data.targetTimeMinutes < 1440
+        && hasValidRoutineDuration()
         && request.resource.data.recurrenceKind in [
           'daily',
           'weekdays',
@@ -156,6 +183,7 @@ service cloud.firestore {
           'notes',
           'scheduledDate',
           'scheduledTimeMinutes',
+          'durationMinutes',
           'reminderEnabled',
           'status',
           'completedAtUtcMillis',
@@ -166,6 +194,7 @@ service cloud.firestore {
         ])
         && request.resource.data.title is string
         && request.resource.data.scheduledDate is string
+        && hasValidOneOffDuration()
         && request.resource.data.reminderEnabled is bool
         && request.resource.data.status in [
           'pending',
@@ -182,6 +211,7 @@ service cloud.firestore {
           'notes',
           'scheduledDate',
           'scheduledTimeMinutes',
+          'durationMinutes',
           'reminderEnabled',
           'status',
           'completedAtUtcMillis',
@@ -193,6 +223,7 @@ service cloud.firestore {
         && hasNewerVersion()
         && request.resource.data.title is string
         && request.resource.data.scheduledDate is string
+        && hasValidOneOffDuration()
         && request.resource.data.reminderEnabled is bool
         && request.resource.data.status in [
           'pending',

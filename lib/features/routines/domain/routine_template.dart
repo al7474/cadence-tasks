@@ -14,6 +14,7 @@ final class RoutineTemplate {
     required this.isEnabled,
     this.notes,
     this.endDate,
+    this.durationMinutes,
     this.reminderEnabled = true,
   });
 
@@ -23,6 +24,7 @@ final class RoutineTemplate {
   final LocalDate startDate;
   final LocalDate? endDate;
   final LocalTime targetTime;
+  final int? durationMinutes;
   final RecurrenceRule recurrence;
   final bool reminderEnabled;
   final bool isEnabled;
@@ -35,6 +37,7 @@ final class RoutineTemplate {
     required RecurrenceRule recurrence,
     String? notes,
     LocalDate? endDate,
+    int? durationMinutes,
     bool reminderEnabled = true,
     bool isEnabled = true,
   }) {
@@ -53,6 +56,13 @@ final class RoutineTemplate {
         ValidationFailure('The end date cannot be before the start date.'),
       );
     }
+    if (durationMinutes != null &&
+        (durationMinutes < 1 ||
+            targetTime.minutesSinceMidnight + durationMinutes > 1440)) {
+      return const FailureResult<RoutineTemplate>(
+        ValidationFailure('A routine duration must end before midnight.'),
+      );
+    }
 
     return Success<RoutineTemplate>(
       RoutineTemplate._(
@@ -62,6 +72,7 @@ final class RoutineTemplate {
         startDate: startDate,
         endDate: endDate,
         targetTime: targetTime,
+        durationMinutes: durationMinutes,
         recurrence: recurrence,
         reminderEnabled: reminderEnabled,
         isEnabled: isEnabled,

@@ -33,12 +33,14 @@ void main() {
         title: 'Morning walk',
         startDate: today,
         targetTime: time(8, 0),
+        durationMinutes: 45,
       );
       final updated = routine(
         id: first.id,
         title: 'Morning walk outside',
         startDate: today,
         targetTime: time(8, 30),
+        durationMinutes: 60,
       );
 
       expect(await routines.save(first), isA<Success<Unit>>());
@@ -50,11 +52,16 @@ void main() {
       expect(saved, hasLength(1));
       expect(saved.single.title, updated.title);
       expect(saved.single.targetTime, updated.targetTime);
+      expect(saved.single.durationMinutes, 60);
       expect(outbox, hasLength(1));
       expect(outbox.single.collectionName, 'routineTemplates');
       expect(
         jsonDecode(outbox.single.payload),
         containsPair('title', updated.title),
+      );
+      expect(
+        jsonDecode(outbox.single.payload),
+        containsPair('durationMinutes', 60),
       );
     });
 
@@ -137,6 +144,7 @@ void main() {
         title: 'Call the dentist',
         scheduledDate: today,
         scheduledTime: time(10, 15),
+        durationMinutes: 90,
         reminderEnabled: true,
       );
 
@@ -146,7 +154,10 @@ void main() {
       expect(saved, hasLength(1));
       expect(saved.single.title, task.title);
       expect(saved.single.scheduledTime, task.scheduledTime);
+      expect(saved.single.durationMinutes, 90);
       expect(saved.single.reminderEnabled, isTrue);
+      final outbox = await database.select(database.syncOutboxEntries).get();
+      expect(jsonDecode(outbox.single.payload), containsPair('durationMinutes', 90));
 
       expect(await oneOffTasks.delete(task.id), isA<Success<Unit>>());
       expect(valueOf(await oneOffTasks.getScheduledFor(today)), isEmpty);

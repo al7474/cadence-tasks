@@ -133,6 +133,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           for (final item in items)
             _AgendaItemCard(
               item: item,
+              onEdit: () => _editTask(item),
               onComplete: () => _perform(item, _AgendaAction.complete),
               onSkip: () => _perform(item, _AgendaAction.skip),
               onSnooze: () => _perform(item, _AgendaAction.snooze),
@@ -157,6 +158,70 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     }
   }
 
+  Future<void> _editTask(AgendaItem item) async {
+    late final Widget editor;
+    if (item.kind == AgendaItemKind.oneOff) {
+      final result = await ref
+          .read(oneOffTaskRepositoryProvider)
+          .getScheduledFor(item.scheduledDate);
+      if (!mounted) {
+        return;
+      }
+      switch (result) {
+        case FailureResult(:final failure):
+          _showError(failure.message);
+          return;
+        case Success(:final value):
+          final matches = value.where((task) => task.id == item.sourceId);
+          if (matches.isEmpty) {
+            _showError(
+              'This task is no longer available. Refresh and try again.',
+            );
+            return;
+          }
+          editor = TaskEditorSheet(task: matches.first);
+      }
+    } else {
+      final result = await ref.read(routineRepositoryProvider).getAllRoutines();
+      if (!mounted) {
+        return;
+      }
+      switch (result) {
+        case FailureResult(:final failure):
+          _showError(failure.message);
+          return;
+        case Success(:final value):
+          final matches = value.where((routine) => routine.id == item.sourceId);
+          if (matches.isEmpty) {
+            _showError(
+              'This routine is no longer available. Refresh and try again.',
+            );
+            return;
+          }
+          editor = TaskEditorSheet(
+            routine: matches.first,
+            sourceOccurrence: item,
+            initialDate: item.scheduledDate,
+            initialTime: item.scheduledTime,
+          );
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => editor,
+    );
+    if (saved == true && mounted) {
+      ref.invalidate(dailyAgendaProvider);
+      ref.invalidate(routinesProvider);
+    }
+  }
+
   Future<void> _selectDate() async {
     final selected = await showDatePicker(
       context: context,
@@ -178,11 +243,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   Future<void> _perform(AgendaItem item, _AgendaAction action) async {
+    if (action == _AgendaAction.edit) {
+      await _editTask(item);
+      return;
+    }
     final AgendaActionsController controller = ref.read(
       agendaActionsControllerProvider,
     );
     late final Future<Result<Unit>> operation;
     switch (action) {
+      case _AgendaAction.edit:
+        return;
       case _AgendaAction.complete:
         operation = controller.setStatus(item, TaskStatus.completed);
         break;
@@ -372,6 +443,7 @@ class _AgendaSummary extends StatelessWidget {
 class _AgendaItemCard extends StatelessWidget {
   const _AgendaItemCard({
     required this.item,
+    required this.onEdit,
     required this.onComplete,
     required this.onSkip,
     required this.onSnooze,
@@ -381,6 +453,7 @@ class _AgendaItemCard extends StatelessWidget {
   });
 
   final AgendaItem item;
+  final VoidCallback onEdit;
   final VoidCallback onComplete;
   final VoidCallback onSkip;
   final VoidCallback onSnooze;
@@ -440,6 +513,8 @@ class _AgendaItemCard extends StatelessWidget {
               tooltip: 'Task actions',
               onSelected: (action) {
                 switch (action) {
+                  case _AgendaAction.edit:
+                    onEdit();
                   case _AgendaAction.complete:
                     onComplete();
                   case _AgendaAction.skip:
@@ -455,6 +530,10 @@ class _AgendaItemCard extends StatelessWidget {
                 }
               },
               itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: _AgendaAction.edit,
+                  child: Text('Edit details'),
+                ),
                 if (status == TaskStatus.pending) ...[
                   const PopupMenuItem(
                     value: _AgendaAction.complete,
@@ -564,4 +643,4 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-enum _AgendaAction { complete, skip, snooze, reschedule, undo, delete }
+enum _AgendaAction { edit, complete, skip, snooze, reschedule, undo, delete }

@@ -18,6 +18,7 @@ final class CreateRoutine {
     required RecurrenceRule recurrence,
     String? notes,
     LocalDate? endDate,
+    int? durationMinutes,
     bool reminderEnabled = true,
     bool isEnabled = true,
   }) {
@@ -28,6 +29,7 @@ final class CreateRoutine {
       endDate: endDate,
       targetTime: targetTime,
       recurrence: recurrence,
+      durationMinutes: durationMinutes,
       notes: notes,
       reminderEnabled: reminderEnabled,
       isEnabled: isEnabled,

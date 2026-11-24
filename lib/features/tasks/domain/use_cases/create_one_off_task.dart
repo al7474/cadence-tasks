@@ -14,6 +14,7 @@ final class CreateOneOffTask {
     required String title,
     required LocalDate scheduledDate,
     LocalTime? scheduledTime,
+    int? durationMinutes,
     bool reminderEnabled = false,
     String? notes,
   }) {
@@ -22,6 +23,7 @@ final class CreateOneOffTask {
       title: title,
       scheduledDate: scheduledDate,
       scheduledTime: scheduledTime,
+      durationMinutes: durationMinutes,
       reminderEnabled: reminderEnabled,
       notes: notes,
     );

@@ -2,7 +2,7 @@ import 'package:cadence_tasks/app/providers.dart';
 import 'package:cadence_tasks/core/domain/result.dart';
 import 'package:cadence_tasks/features/routines/domain/recurrence_rule.dart';
 import 'package:cadence_tasks/features/routines/domain/routine_template.dart';
-import 'package:cadence_tasks/features/routines/presentation/widgets/routine_editor_sheet.dart';
+import 'package:cadence_tasks/features/tasks/presentation/widgets/task_editor_sheet.dart';
 // Keep compatibility with the declared Flutter 3.38.1 minimum.
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
@@ -66,7 +66,8 @@ class RoutinesScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => RoutineEditorSheet(routine: routine),
+      builder: (context) =>
+          TaskEditorSheet(routine: routine, startAsRoutine: routine == null),
     );
     if (saved == true) {
       ref.invalidate(routinesProvider);
@@ -89,6 +90,7 @@ class RoutinesScreen extends ConsumerWidget {
       recurrence: routine.recurrence,
       reminderEnabled: routine.reminderEnabled,
       isEnabled: enabled,
+      durationMinutes: routine.durationMinutes,
     );
     switch (updated) {
       case FailureResult<RoutineTemplate>(:final failure):

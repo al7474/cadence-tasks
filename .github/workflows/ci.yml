@@ -20,6 +20,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.50.1"
@@ -36,3 +37,32 @@ jobs:
       - run: npm ci --prefix tool/firestore-rules-tests
       - run: npm audit --prefix tool/firestore-rules-tests --audit-level=moderate
       - run: npm test --prefix tool/firestore-rules-tests
+      - name: Configure temporary Android test signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          keystore="${RUNNER_TEMP}/cadence-tasks-test.jks"
+          keytool -genkeypair -noprompt \
+            -keystore "${keystore}" \
+            -storetype JKS \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+          {
+            echo "ANDROID_KEYSTORE_PATH=${keystore}"
+            echo "ANDROID_KEYSTORE_PASSWORD=android"
+            echo "ANDROID_KEY_ALIAS=androiddebugkey"
+            echo "ANDROID_KEY_PASSWORD=android"
+          } >> "${GITHUB_ENV}"
+      - name: Build optimized ARM64 test APK
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cadence-tasks-arm64-test-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
+          retention-days: 7

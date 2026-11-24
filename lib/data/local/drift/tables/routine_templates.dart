@@ -16,6 +16,8 @@ class RoutineTemplates extends Table {
 
   IntColumn get targetTimeMinutes => integer()();
 
+  IntColumn get durationMinutes => integer().nullable()();
+
   TextColumn get recurrenceKind => text()();
 
   IntColumn get weekdaysMask => integer().withDefault(const Constant(0))();

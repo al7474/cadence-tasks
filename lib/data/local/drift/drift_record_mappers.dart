@@ -27,6 +27,7 @@ abstract final class DriftRecordMappers {
       startDate: routine.startDate.iso8601,
       endDate: Value<String?>(routine.endDate?.iso8601),
       targetTimeMinutes: routine.targetTime.minutesSinceMidnight,
+      durationMinutes: Value<int?>(routine.durationMinutes),
       recurrenceKind: recurrence.kind,
       weekdaysMask: Value<int>(recurrence.weekdaysMask),
       intervalDays: Value<int?>(recurrence.intervalDays),
@@ -82,6 +83,7 @@ abstract final class DriftRecordMappers {
       scheduledTimeMinutes: Value<int?>(
         task.scheduledTime?.minutesSinceMidnight,
       ),
+      durationMinutes: Value<int?>(task.durationMinutes),
       reminderEnabled: Value<bool>(task.reminderEnabled),
       status: task.status.name,
       completedAtUtcMillis: Value<int?>(
@@ -104,6 +106,7 @@ abstract final class DriftRecordMappers {
       startDate: _dateFromString(row.startDate),
       endDate: row.endDate == null ? null : _dateFromString(row.endDate!),
       targetTime: _timeFromMinutes(row.targetTimeMinutes),
+      durationMinutes: row.durationMinutes,
       recurrence: _decodeRecurrence(
         row.recurrenceKind,
         row.weekdaysMask,
@@ -143,6 +146,7 @@ abstract final class DriftRecordMappers {
       scheduledTime: row.scheduledTimeMinutes == null
           ? null
           : _timeFromMinutes(row.scheduledTimeMinutes!),
+      durationMinutes: row.durationMinutes,
       reminderEnabled: row.reminderEnabled,
       status: _statusFromString(row.status),
       completedAtUtc: _dateTimeFromMillis(row.completedAtUtcMillis),
@@ -162,6 +166,7 @@ abstract final class DriftRecordMappers {
           ? null
           : _dateFromString(_optionalString(payload, 'endDate')!),
       targetTime: _timeFromMinutes(_requiredInt(payload, 'targetTimeMinutes')),
+      durationMinutes: _optionalInt(payload, 'durationMinutes'),
       recurrence: _decodeRecurrence(
         _requiredString(payload, 'recurrenceKind'),
         _requiredInt(payload, 'weekdaysMask'),
@@ -209,6 +214,7 @@ abstract final class DriftRecordMappers {
       scheduledTime: _optionalInt(payload, 'scheduledTimeMinutes') == null
           ? null
           : _timeFromMinutes(_optionalInt(payload, 'scheduledTimeMinutes')!),
+      durationMinutes: _optionalInt(payload, 'durationMinutes'),
       reminderEnabled: _requiredBool(payload, 'reminderEnabled'),
       status: _statusFromString(_requiredString(payload, 'status')),
       completedAtUtc: _dateTimeFromMillis(
@@ -239,6 +245,7 @@ abstract final class DriftRecordMappers {
       'startDate': routine.startDate.iso8601,
       'endDate': routine.endDate?.iso8601,
       'targetTimeMinutes': routine.targetTime.minutesSinceMidnight,
+      'durationMinutes': routine.durationMinutes,
       'recurrenceKind': recurrence.kind,
       'weekdaysMask': recurrence.weekdaysMask,
       'intervalDays': recurrence.intervalDays,
@@ -285,6 +292,7 @@ abstract final class DriftRecordMappers {
       'notes': task.notes,
       'scheduledDate': task.scheduledDate.iso8601,
       'scheduledTimeMinutes': task.scheduledTime?.minutesSinceMidnight,
+      'durationMinutes': task.durationMinutes,
       'reminderEnabled': task.reminderEnabled,
       'status': task.status.name,
       'completedAtUtcMillis': task.completedAtUtc?.millisecondsSinceEpoch,

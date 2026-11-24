@@ -14,6 +14,8 @@ class OneOffTasks extends Table {
 
   IntColumn get scheduledTimeMinutes => integer().nullable()();
 
+  IntColumn get durationMinutes => integer().nullable()();
+
   BoolColumn get reminderEnabled =>
       boolean().withDefault(const Constant(false))();
 

@@ -6,7 +6,6 @@ import 'package:cadence_tasks/core/domain/task_status.dart';
 import 'package:cadence_tasks/features/agenda/domain/agenda_item.dart';
 import 'package:cadence_tasks/features/agenda/domain/daily_agenda.dart';
 import 'package:cadence_tasks/features/calendar/domain/calendar_display_settings.dart';
-import 'package:cadence_tasks/features/routines/presentation/widgets/routine_editor_sheet.dart';
 import 'package:cadence_tasks/features/tasks/presentation/widgets/task_editor_sheet.dart';
 // Keep compatibility with the declared Flutter 3.38.1 minimum.
 // ignore: deprecated_member_use
@@ -22,6 +21,8 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  static const _hourHeight = 64.0;
+
   late LocalDate _selectedDate = LocalDate.fromDateTime(DateTime.now());
   late LocalDate _weekStart = _startOfWeek(_selectedDate);
 
@@ -49,9 +50,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     final dates = _weekDates;
+    final agendaStates = [
+      for (final date in dates) ref.watch(dailyAgendaProvider(date)),
+    ];
     final schedules = <_DaySchedule>[];
-    for (final date in dates) {
-      final agendaState = ref.watch(dailyAgendaProvider(date));
+    for (var index = 0; index < dates.length; index++) {
+      final date = dates[index];
+      final agendaState = agendaStates[index];
       final agenda = agendaState.asData?.value;
       if (agenda != null) {
         schedules.add(_DaySchedule(date: date, agenda: agenda));
@@ -88,37 +93,47 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          _weekToolbar(context, displaySettings),
-          if (MediaQuery.sizeOf(context).width < 820)
-            _weekdaySelector(context, schedules)
-          else
-            const SizedBox(height: 8),
-          const Divider(height: 1),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth >= 820) {
-                  return _weekGrid(context, schedules, displaySettings);
-                }
-                final selectedSchedule = schedules.firstWhere(
-                  (schedule) => schedule.date == _selectedDate,
-                );
-                return _selectedDayTimeline(
-                  context,
-                  selectedSchedule,
-                  displaySettings,
-                );
-              },
+          Column(
+            children: [
+              _weekToolbar(context, displaySettings),
+              if (MediaQuery.sizeOf(context).width < 820)
+                _weekdaySelector(context, schedules)
+              else
+                const SizedBox(height: 8),
+              const Divider(height: 1),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth >= 820) {
+                      return _weekGrid(context, schedules, displaySettings);
+                    }
+                    final selectedSchedule = schedules.firstWhere(
+                      (schedule) => schedule.date == _selectedDate,
+                    );
+                    return _selectedDayTimeline(
+                      context,
+                      selectedSchedule,
+                      displaySettings,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: FloatingActionButton.extended(
+                onPressed: () => _openEditor(date: _selectedDate),
+                icon: const Icon(Icons.add),
+                label: const Text('Add'),
+              ),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateOptions(date: _selectedDate),
-        icon: const Icon(Icons.add),
-        label: const Text('Add'),
       ),
     );
   }
@@ -202,31 +217,44 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final allDayItems = schedule.items
         .where((item) => item.scheduledTime == null)
         .toList(growable: false);
+    final visibleEndHour = displaySettings.endHour + 1;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
       children: [
         _AllDaySection(
           items: allDayItems,
-          onAdd: () => _showCreateOptions(date: schedule.date),
+          onAdd: () => _openEditor(date: schedule.date),
           onOpenItem: _openItemActions,
         ),
-        for (
-          var hour = displaySettings.startHour;
-          hour <= displaySettings.endHour;
-          hour++
-        )
-          _HourTimelineRow(
-            hour: hour,
-            items: schedule.items
-                .where((item) => item.scheduledTime?.hour == hour)
-                .toList(growable: false),
-            onAdd: () => _showCreateOptions(
-              date: schedule.date,
-              time: _timeAtHour(hour),
-            ),
-            onOpenItem: _openItemActions,
+        SizedBox(
+          height: (visibleEndHour - displaySettings.startHour) * _hourHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 62,
+                child: _CalendarTimeAxis(
+                  startHour: displaySettings.startHour,
+                  endHour: displaySettings.endHour,
+                  hourHeight: _hourHeight,
+                ),
+              ),
+              Expanded(
+                child: _TimedCalendarColumn(
+                  startHour: displaySettings.startHour,
+                  endHour: displaySettings.endHour,
+                  hourHeight: _hourHeight,
+                  items: schedule.items,
+                  date: schedule.date,
+                  onAdd: (hour) =>
+                      _openEditor(date: schedule.date, time: _timeAtHour(hour)),
+                  onOpenItem: _openItemActions,
+                ),
+              ),
+            ],
           ),
+        ),
       ],
     );
   }
@@ -241,6 +269,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         for (final item in schedule.items)
           if (item.scheduledTime == null) item,
     ];
+    final visibleEndHour = displaySettings.endHour + 1;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 100),
@@ -254,7 +283,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   child: _WeekGridDayHeader(
                     date: schedule.date,
                     itemCount: schedule.items.length,
-                    onTap: () => _showCreateOptions(date: schedule.date),
+                    onTap: () => _openEditor(date: schedule.date),
                   ),
                 ),
             ],
@@ -262,84 +291,116 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           _WeekGridAllDayRow(
             schedules: schedules,
             items: allDayItems,
-            onAdd: (date) => _showCreateOptions(date: date),
+            onAdd: (date) => _openEditor(date: date),
             onOpenItem: _openItemActions,
           ),
-          for (
-            var hour = displaySettings.startHour;
-            hour <= displaySettings.endHour;
-            hour++
-          )
-            _WeekGridHourRow(
-              hour: hour,
-              schedules: schedules,
-              itemsForDay: (schedule) => schedule.items
-                  .where((item) => item.scheduledTime?.hour == hour)
-                  .toList(growable: false),
-              onAdd: (date) =>
-                  _showCreateOptions(date: date, time: _timeAtHour(hour)),
-              onOpenItem: _openItemActions,
+          SizedBox(
+            height: (visibleEndHour - displaySettings.startHour) * _hourHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: _CalendarTimeAxis(
+                    startHour: displaySettings.startHour,
+                    endHour: displaySettings.endHour,
+                    hourHeight: _hourHeight,
+                  ),
+                ),
+                for (final schedule in schedules)
+                  Expanded(
+                    child: _TimedCalendarColumn(
+                      startHour: displaySettings.startHour,
+                      endHour: displaySettings.endHour,
+                      hourHeight: _hourHeight,
+                      items: schedule.items,
+                      date: schedule.date,
+                      onAdd: (hour) => _openEditor(
+                        date: schedule.date,
+                        time: _timeAtHour(hour),
+                      ),
+                      onOpenItem: _openItemActions,
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _showCreateOptions({
-    required LocalDate date,
-    LocalTime? time,
-  }) async {
-    final selection = await showModalBottomSheet<_CreateCalendarEntry>(
+  Future<void> _openEditor({required LocalDate date, LocalTime? time}) async {
+    final saved = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.task_alt_outlined),
-              title: const Text('One-time task'),
-              subtitle: Text(
-                time == null
-                    ? _formatFullDate(date)
-                    : '${_formatFullDate(date)} at ${_formatTime(context, time)}',
-              ),
-              onTap: () => Navigator.of(context).pop(_CreateCalendarEntry.task),
-            ),
-            ListTile(
-              leading: const Icon(Icons.repeat),
-              title: const Text('Repeating routine'),
-              subtitle: const Text('Choose daily, weekdays, or an interval'),
-              onTap: () =>
-                  Navigator.of(context).pop(_CreateCalendarEntry.routine),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => TaskEditorSheet(initialDate: date, initialTime: time),
     );
-    if (selection == null || !mounted) {
+    if (saved == true && mounted) {
+      ref.invalidate(dailyAgendaProvider);
+      ref.invalidate(routinesProvider);
+    }
+  }
+
+  Future<void> _editItem(AgendaItem item) async {
+    late final Widget editor;
+    if (item.kind == AgendaItemKind.oneOff) {
+      final result = await ref
+          .read(oneOffTaskRepositoryProvider)
+          .getScheduledFor(item.scheduledDate);
+      if (!mounted) {
+        return;
+      }
+      switch (result) {
+        case FailureResult(:final failure):
+          _showError(failure.message);
+          return;
+        case Success(:final value):
+          final matches = value.where((task) => task.id == item.sourceId);
+          if (matches.isEmpty) {
+            _showError(
+              'This task is no longer available. Refresh and try again.',
+            );
+            return;
+          }
+          editor = TaskEditorSheet(task: matches.first);
+      }
+    } else {
+      final result = await ref.read(routineRepositoryProvider).getAllRoutines();
+      if (!mounted) {
+        return;
+      }
+      switch (result) {
+        case FailureResult(:final failure):
+          _showError(failure.message);
+          return;
+        case Success(:final value):
+          final matches = value.where((routine) => routine.id == item.sourceId);
+          if (matches.isEmpty) {
+            _showError(
+              'This routine is no longer available. Refresh and try again.',
+            );
+            return;
+          }
+          editor = TaskEditorSheet(
+            routine: matches.first,
+            sourceOccurrence: item,
+            initialDate: item.scheduledDate,
+            initialTime: item.scheduledTime,
+          );
+      }
+    }
+
+    if (!mounted) {
       return;
     }
-
-    final bool? saved;
-    switch (selection) {
-      case _CreateCalendarEntry.task:
-        saved = await showModalBottomSheet<bool>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          builder: (_) => TaskEditorSheet(initialDate: date, initialTime: time),
-        );
-      case _CreateCalendarEntry.routine:
-        saved = await showModalBottomSheet<bool>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          builder: (_) =>
-              RoutineEditorSheet(initialDate: date, initialTime: time),
-        );
-    }
-
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => editor,
+    );
     if (saved == true && mounted) {
       ref.invalidate(dailyAgendaProvider);
       ref.invalidate(routinesProvider);
@@ -366,6 +427,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 subtitle: Text(
                   '$typeLabel - ${_formatFullDate(item.scheduledDate)} - $timeLabel - ${_statusLabel(item.status)}',
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit details'),
+                subtitle: const Text(
+                  'Change the type, schedule, or repeat pattern.',
+                ),
+                onTap: () =>
+                    Navigator.of(context).pop(_CalendarItemAction.edit),
               ),
               if (item.status == TaskStatus.pending) ...[
                 ListTile(
@@ -416,6 +486,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (action == null || !mounted) {
       return;
     }
+    if (action == _CalendarItemAction.edit) {
+      await _editItem(item);
+      return;
+    }
 
     final controller = ref.read(agendaActionsControllerProvider);
     final result = switch (action) {
@@ -433,6 +507,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         TaskStatus.pending,
       ),
       _CalendarItemAction.delete => controller.deleteOneOffTask(item),
+      _CalendarItemAction.edit => throw StateError(
+        'Edit actions must be handled before task status actions.',
+      ),
     };
 
     switch (await result) {
@@ -497,6 +574,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       TaskStatus.completed => 'Completed',
       TaskStatus.skipped => 'Skipped',
     };
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   static DateTime _toDateTime(LocalDate date) {
@@ -683,84 +766,344 @@ class _AllDaySection extends StatelessWidget {
   }
 }
 
-class _HourTimelineRow extends StatelessWidget {
-  const _HourTimelineRow({
-    required this.hour,
+class _CalendarTimeAxis extends StatelessWidget {
+  const _CalendarTimeAxis({
+    required this.startHour,
+    required this.endHour,
+    required this.hourHeight,
+  });
+
+  final int startHour;
+  final int endHour;
+  final double hourHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: (endHour - startHour + 1) * hourHeight,
+      child: Stack(
+        children: [
+          for (var hour = startHour; hour <= endHour; hour++)
+            Positioned(
+              top: (hour - startHour) * hourHeight + 4,
+              left: 0,
+              right: 4,
+              child: Text(
+                TimeOfDay(hour: hour, minute: 0).format(context),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimedCalendarColumn extends StatelessWidget {
+  const _TimedCalendarColumn({
+    required this.startHour,
+    required this.endHour,
+    required this.hourHeight,
     required this.items,
+    required this.date,
     required this.onAdd,
     required this.onOpenItem,
   });
 
-  final int hour;
+  final int startHour;
+  final int endHour;
+  final double hourHeight;
   final List<AgendaItem> items;
-  final VoidCallback onAdd;
+  final LocalDate date;
+  final ValueChanged<int> onAdd;
   final ValueChanged<AgendaItem> onOpenItem;
 
   @override
   Widget build(BuildContext context) {
-    final time = TimeOfDay(hour: hour, minute: 0).format(context);
+    final visibleStartMinute = startHour * 60;
+    final visibleEndMinute = (endHour + 1) * 60;
+    final visibleItems = items
+        .where((item) {
+          final time = item.scheduledTime;
+          if (time == null) {
+            return false;
+          }
+          final startMinute = time.minutesSinceMidnight;
+          final endMinute = startMinute + (item.durationMinutes ?? 30);
+          return startMinute < visibleEndMinute &&
+              endMinute > visibleStartMinute;
+        })
+        .toList(growable: false);
+    final placements = _placeTimedEvents(visibleItems);
+    final gridHeight = (endHour - startHour + 1) * hourHeight;
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 62,
-            height: items.isEmpty ? 54 : null,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Text(time, style: Theme.of(context).textTheme.labelSmall),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              constraints: BoxConstraints(minHeight: items.isEmpty ? 54 : 0),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Theme.of(context).dividerColor),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final children = <Widget>[
+          for (var hour = startHour; hour <= endHour; hour++)
+            Positioned(
+              top: (hour - startHour) * hourHeight,
+              left: 0,
+              right: 0,
+              height: hourHeight,
+              child: InkWell(
+                onTap: () => onAdd(hour),
+                child: Container(
+                  key: ValueKey<String>('calendar-slot:${date.iso8601}:$hour'),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Theme.of(context).dividerColor),
+                      left: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
+                  ),
+                  alignment: Alignment.topRight,
+                  child:
+                      visibleItems.any(
+                        (item) => item.scheduledTime!.hour == hour,
+                      )
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.add,
+                            size: 14,
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
                 ),
               ),
-              child: items.isEmpty
-                  ? InkWell(
-                      onTap: onAdd,
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                          tooltip: 'Add at $time',
-                          onPressed: onAdd,
-                          icon: const Icon(Icons.add_circle_outline, size: 18),
-                        ),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Column(
-                        children: [
-                          for (final item in items)
-                            _MobileEventCard(
-                              item: item,
-                              onTap: () => onOpenItem(item),
-                            ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: IconButton(
-                              tooltip: 'Add at $time',
-                              onPressed: onAdd,
-                              icon: const Icon(
-                                Icons.add_circle_outline,
-                                size: 18,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
             ),
-          ),
-        ],
+          for (final placement in placements)
+            _positionedEvent(
+              context,
+              placement,
+              constraints.maxWidth,
+              visibleStartMinute,
+              visibleEndMinute,
+            ),
+        ];
+
+        return SizedBox(
+          height: gridHeight,
+          child: Stack(clipBehavior: Clip.hardEdge, children: children),
+        );
+      },
+    );
+  }
+
+  Widget _positionedEvent(
+    BuildContext context,
+    _TimedEventPlacement placement,
+    double columnWidth,
+    int visibleStartMinute,
+    int visibleEndMinute,
+  ) {
+    final item = placement.item;
+    final startMinute = item.scheduledTime!.minutesSinceMidnight;
+    final durationMinutes = _visualDurationMinutes(item);
+    final endMinute = startMinute + durationMinutes;
+    final clippedStartMinute = startMinute > visibleStartMinute
+        ? startMinute
+        : visibleStartMinute;
+    final clippedEndMinute = endMinute < visibleEndMinute
+        ? endMinute
+        : visibleEndMinute;
+    final availableHeight =
+        (clippedEndMinute - clippedStartMinute) * hourHeight / 60;
+    final verticalInset = availableHeight >= 6 ? 2.0 : availableHeight / 3;
+    final height = availableHeight - verticalInset * 2;
+    const horizontalInset = 2.0;
+    const laneGap = 2.0;
+    final laneWidth =
+        (columnWidth -
+            horizontalInset * 2 -
+            laneGap * (placement.laneCount - 1)) /
+        placement.laneCount;
+
+    return Positioned(
+      top:
+          (clippedStartMinute - visibleStartMinute) * hourHeight / 60 +
+          verticalInset,
+      left: horizontalInset + placement.lane * (laneWidth + laneGap),
+      width: laneWidth,
+      height: height,
+      child: _TimedEventBlock(
+        key: ValueKey<String>('calendar-event:${item.id}'),
+        item: item,
+        onTap: () => onOpenItem(item),
       ),
     );
+  }
+}
+
+List<_TimedEventPlacement> _placeTimedEvents(List<AgendaItem> items) {
+  final events =
+      items.map((item) {
+        final startMinute = item.scheduledTime!.minutesSinceMidnight;
+        return _TimedEventRange(
+          item: item,
+          startMinute: startMinute,
+          endMinute: startMinute + _visualDurationMinutes(item),
+        );
+      }).toList()..sort((first, second) {
+        final startComparison = first.startMinute.compareTo(second.startMinute);
+        return startComparison != 0
+            ? startComparison
+            : first.endMinute.compareTo(second.endMinute);
+      });
+
+  final placements = <_TimedEventPlacement>[];
+  var group = <_TimedEventRange>[];
+  var groupEndMinute = 0;
+
+  void flushGroup() {
+    final laneEnds = <int>[];
+    final groupPlacements = <({int lane, _TimedEventRange event})>[];
+    for (final event in group) {
+      var lane = laneEnds.indexWhere((end) => end <= event.startMinute);
+      if (lane == -1) {
+        lane = laneEnds.length;
+        laneEnds.add(event.endMinute);
+      } else {
+        laneEnds[lane] = event.endMinute;
+      }
+      groupPlacements.add((lane: lane, event: event));
+    }
+
+    for (final placement in groupPlacements) {
+      placements.add(
+        _TimedEventPlacement(
+          item: placement.event.item,
+          lane: placement.lane,
+          laneCount: laneEnds.length,
+        ),
+      );
+    }
+    group = <_TimedEventRange>[];
+    groupEndMinute = 0;
+  }
+
+  for (final event in events) {
+    if (group.isNotEmpty && event.startMinute >= groupEndMinute) {
+      flushGroup();
+    }
+    group.add(event);
+    if (event.endMinute > groupEndMinute || group.length == 1) {
+      groupEndMinute = event.endMinute;
+    }
+  }
+  if (group.isNotEmpty) {
+    flushGroup();
+  }
+
+  return placements;
+}
+
+int _visualDurationMinutes(AgendaItem item) {
+  final duration = item.durationMinutes;
+  return duration == null
+      ? 30
+      : duration < 20
+      ? 20
+      : duration;
+}
+
+final class _TimedEventRange {
+  const _TimedEventRange({
+    required this.item,
+    required this.startMinute,
+    required this.endMinute,
+  });
+
+  final AgendaItem item;
+  final int startMinute;
+  final int endMinute;
+}
+
+final class _TimedEventPlacement {
+  const _TimedEventPlacement({
+    required this.item,
+    required this.lane,
+    required this.laneCount,
+  });
+
+  final AgendaItem item;
+  final int lane;
+  final int laneCount;
+}
+
+class _TimedEventBlock extends StatelessWidget {
+  const _TimedEventBlock({required this.item, required this.onTap, super.key});
+
+  final AgendaItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isComplete = item.status != TaskStatus.pending;
+    final timeRange = _timeRange(context, item);
+
+    return Tooltip(
+      message: '${item.title} · $timeRange',
+      child: Material(
+        color: isComplete
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(5),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(5),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.durationMinutes == null
+                        ? '${_startTime(context, item)} ${item.title}'
+                        : item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  if (item.durationMinutes != null &&
+                      constraints.maxHeight >= 38)
+                    Text(
+                      timeRange,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _timeRange(BuildContext context, AgendaItem item) {
+    final start = item.scheduledTime!;
+    final startLabel = _startTime(context, item);
+    final duration = item.durationMinutes;
+    if (duration == null) {
+      return startLabel;
+    }
+    final endMinute = (start.minutesSinceMidnight + duration) % 1440;
+    final endLabel = TimeOfDay(
+      hour: endMinute ~/ 60,
+      minute: endMinute % 60,
+    ).format(context);
+    return '$startLabel - $endLabel';
+  }
+
+  static String _startTime(BuildContext context, AgendaItem item) {
+    final time = item.scheduledTime!;
+    return TimeOfDay(hour: time.hour, minute: time.minute).format(context);
   }
 }
 
@@ -926,69 +1269,6 @@ class _WeekGridAllDayRow extends StatelessWidget {
   }
 }
 
-class _WeekGridHourRow extends StatelessWidget {
-  const _WeekGridHourRow({
-    required this.hour,
-    required this.schedules,
-    required this.itemsForDay,
-    required this.onAdd,
-    required this.onOpenItem,
-  });
-
-  final int hour;
-  final List<_DaySchedule> schedules;
-  final List<AgendaItem> Function(_DaySchedule schedule) itemsForDay;
-  final ValueChanged<LocalDate> onAdd;
-  final ValueChanged<AgendaItem> onOpenItem;
-
-  @override
-  Widget build(BuildContext context) {
-    final itemsByDay = schedules.map(itemsForDay).toList(growable: false);
-    final maximumItemCount = itemsByDay
-        .map((items) => items.length)
-        .fold<int>(0, (current, count) => count > current ? count : current);
-    final rowHeight = maximumItemCount == 0
-        ? 48.0
-        : (maximumItemCount * 32 + 22).toDouble();
-
-    return SizedBox(
-      height: rowHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 56,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                TimeOfDay(hour: hour, minute: 0).format(context),
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-            ),
-          ),
-          for (var index = 0; index < schedules.length; index++)
-            Expanded(
-              child: Container(
-                height: rowHeight,
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Theme.of(context).dividerColor),
-                    left: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
-                child: _WeekGridCell(
-                  items: itemsByDay[index],
-                  onAdd: () => onAdd(schedules[index].date),
-                  onOpenItem: onOpenItem,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _WeekGridCell extends StatelessWidget {
   const _WeekGridCell({
     required this.items,
@@ -1107,6 +1387,4 @@ class _CalendarErrorView extends StatelessWidget {
   }
 }
 
-enum _CreateCalendarEntry { task, routine }
-
-enum _CalendarItemAction { complete, skip, snooze, undo, delete }
+enum _CalendarItemAction { edit, complete, skip, snooze, undo, delete }

@@ -462,6 +462,17 @@ class $RoutineTemplatesTable extends RoutineTemplates
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _durationMinutesMeta = const VerificationMeta(
+    'durationMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> durationMinutes = GeneratedColumn<int>(
+    'duration_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _recurrenceKindMeta = const VerificationMeta(
     'recurrenceKind',
   );
@@ -566,6 +577,7 @@ class $RoutineTemplatesTable extends RoutineTemplates
     startDate,
     endDate,
     targetTimeMinutes,
+    durationMinutes,
     recurrenceKind,
     weekdaysMask,
     intervalDays,
@@ -638,6 +650,15 @@ class $RoutineTemplatesTable extends RoutineTemplates
       );
     } else if (isInserting) {
       context.missing(_targetTimeMinutesMeta);
+    }
+    if (data.containsKey('duration_minutes')) {
+      context.handle(
+        _durationMinutesMeta,
+        durationMinutes.isAcceptableOrUnknown(
+          data['duration_minutes']!,
+          _durationMinutesMeta,
+        ),
+      );
     }
     if (data.containsKey('recurrence_kind')) {
       context.handle(
@@ -748,6 +769,10 @@ class $RoutineTemplatesTable extends RoutineTemplates
         DriftSqlType.int,
         data['${effectivePrefix}target_time_minutes'],
       )!,
+      durationMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_minutes'],
+      ),
       recurrenceKind: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}recurrence_kind'],
@@ -798,6 +823,7 @@ class RoutineTemplateRow extends DataClass
   final String startDate;
   final String? endDate;
   final int targetTimeMinutes;
+  final int? durationMinutes;
   final String recurrenceKind;
   final int weekdaysMask;
   final int? intervalDays;
@@ -814,6 +840,7 @@ class RoutineTemplateRow extends DataClass
     required this.startDate,
     this.endDate,
     required this.targetTimeMinutes,
+    this.durationMinutes,
     required this.recurrenceKind,
     required this.weekdaysMask,
     this.intervalDays,
@@ -837,6 +864,9 @@ class RoutineTemplateRow extends DataClass
       map['end_date'] = Variable<String>(endDate);
     }
     map['target_time_minutes'] = Variable<int>(targetTimeMinutes);
+    if (!nullToAbsent || durationMinutes != null) {
+      map['duration_minutes'] = Variable<int>(durationMinutes);
+    }
     map['recurrence_kind'] = Variable<String>(recurrenceKind);
     map['weekdays_mask'] = Variable<int>(weekdaysMask);
     if (!nullToAbsent || intervalDays != null) {
@@ -865,6 +895,9 @@ class RoutineTemplateRow extends DataClass
           ? const Value.absent()
           : Value(endDate),
       targetTimeMinutes: Value(targetTimeMinutes),
+      durationMinutes: durationMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMinutes),
       recurrenceKind: Value(recurrenceKind),
       weekdaysMask: Value(weekdaysMask),
       intervalDays: intervalDays == null && nullToAbsent
@@ -893,6 +926,7 @@ class RoutineTemplateRow extends DataClass
       startDate: serializer.fromJson<String>(json['startDate']),
       endDate: serializer.fromJson<String?>(json['endDate']),
       targetTimeMinutes: serializer.fromJson<int>(json['targetTimeMinutes']),
+      durationMinutes: serializer.fromJson<int?>(json['durationMinutes']),
       recurrenceKind: serializer.fromJson<String>(json['recurrenceKind']),
       weekdaysMask: serializer.fromJson<int>(json['weekdaysMask']),
       intervalDays: serializer.fromJson<int?>(json['intervalDays']),
@@ -914,6 +948,7 @@ class RoutineTemplateRow extends DataClass
       'startDate': serializer.toJson<String>(startDate),
       'endDate': serializer.toJson<String?>(endDate),
       'targetTimeMinutes': serializer.toJson<int>(targetTimeMinutes),
+      'durationMinutes': serializer.toJson<int?>(durationMinutes),
       'recurrenceKind': serializer.toJson<String>(recurrenceKind),
       'weekdaysMask': serializer.toJson<int>(weekdaysMask),
       'intervalDays': serializer.toJson<int?>(intervalDays),
@@ -933,6 +968,7 @@ class RoutineTemplateRow extends DataClass
     String? startDate,
     Value<String?> endDate = const Value.absent(),
     int? targetTimeMinutes,
+    Value<int?> durationMinutes = const Value.absent(),
     String? recurrenceKind,
     int? weekdaysMask,
     Value<int?> intervalDays = const Value.absent(),
@@ -949,6 +985,9 @@ class RoutineTemplateRow extends DataClass
     startDate: startDate ?? this.startDate,
     endDate: endDate.present ? endDate.value : this.endDate,
     targetTimeMinutes: targetTimeMinutes ?? this.targetTimeMinutes,
+    durationMinutes: durationMinutes.present
+        ? durationMinutes.value
+        : this.durationMinutes,
     recurrenceKind: recurrenceKind ?? this.recurrenceKind,
     weekdaysMask: weekdaysMask ?? this.weekdaysMask,
     intervalDays: intervalDays.present ? intervalDays.value : this.intervalDays,
@@ -971,6 +1010,9 @@ class RoutineTemplateRow extends DataClass
       targetTimeMinutes: data.targetTimeMinutes.present
           ? data.targetTimeMinutes.value
           : this.targetTimeMinutes,
+      durationMinutes: data.durationMinutes.present
+          ? data.durationMinutes.value
+          : this.durationMinutes,
       recurrenceKind: data.recurrenceKind.present
           ? data.recurrenceKind.value
           : this.recurrenceKind,
@@ -1006,6 +1048,7 @@ class RoutineTemplateRow extends DataClass
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('targetTimeMinutes: $targetTimeMinutes, ')
+          ..write('durationMinutes: $durationMinutes, ')
           ..write('recurrenceKind: $recurrenceKind, ')
           ..write('weekdaysMask: $weekdaysMask, ')
           ..write('intervalDays: $intervalDays, ')
@@ -1027,6 +1070,7 @@ class RoutineTemplateRow extends DataClass
     startDate,
     endDate,
     targetTimeMinutes,
+    durationMinutes,
     recurrenceKind,
     weekdaysMask,
     intervalDays,
@@ -1047,6 +1091,7 @@ class RoutineTemplateRow extends DataClass
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.targetTimeMinutes == this.targetTimeMinutes &&
+          other.durationMinutes == this.durationMinutes &&
           other.recurrenceKind == this.recurrenceKind &&
           other.weekdaysMask == this.weekdaysMask &&
           other.intervalDays == this.intervalDays &&
@@ -1065,6 +1110,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
   final Value<String> startDate;
   final Value<String?> endDate;
   final Value<int> targetTimeMinutes;
+  final Value<int?> durationMinutes;
   final Value<String> recurrenceKind;
   final Value<int> weekdaysMask;
   final Value<int?> intervalDays;
@@ -1082,6 +1128,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.targetTimeMinutes = const Value.absent(),
+    this.durationMinutes = const Value.absent(),
     this.recurrenceKind = const Value.absent(),
     this.weekdaysMask = const Value.absent(),
     this.intervalDays = const Value.absent(),
@@ -1100,6 +1147,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
     required String startDate,
     this.endDate = const Value.absent(),
     required int targetTimeMinutes,
+    this.durationMinutes = const Value.absent(),
     required String recurrenceKind,
     this.weekdaysMask = const Value.absent(),
     this.intervalDays = const Value.absent(),
@@ -1125,6 +1173,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
     Expression<String>? startDate,
     Expression<String>? endDate,
     Expression<int>? targetTimeMinutes,
+    Expression<int>? durationMinutes,
     Expression<String>? recurrenceKind,
     Expression<int>? weekdaysMask,
     Expression<int>? intervalDays,
@@ -1143,6 +1192,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (targetTimeMinutes != null) 'target_time_minutes': targetTimeMinutes,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (recurrenceKind != null) 'recurrence_kind': recurrenceKind,
       if (weekdaysMask != null) 'weekdays_mask': weekdaysMask,
       if (intervalDays != null) 'interval_days': intervalDays,
@@ -1165,6 +1215,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
     Value<String>? startDate,
     Value<String?>? endDate,
     Value<int>? targetTimeMinutes,
+    Value<int?>? durationMinutes,
     Value<String>? recurrenceKind,
     Value<int>? weekdaysMask,
     Value<int?>? intervalDays,
@@ -1183,6 +1234,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       targetTimeMinutes: targetTimeMinutes ?? this.targetTimeMinutes,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
       recurrenceKind: recurrenceKind ?? this.recurrenceKind,
       weekdaysMask: weekdaysMask ?? this.weekdaysMask,
       intervalDays: intervalDays ?? this.intervalDays,
@@ -1218,6 +1270,9 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
     }
     if (targetTimeMinutes.present) {
       map['target_time_minutes'] = Variable<int>(targetTimeMinutes.value);
+    }
+    if (durationMinutes.present) {
+      map['duration_minutes'] = Variable<int>(durationMinutes.value);
     }
     if (recurrenceKind.present) {
       map['recurrence_kind'] = Variable<String>(recurrenceKind.value);
@@ -1259,6 +1314,7 @@ class RoutineTemplatesCompanion extends UpdateCompanion<RoutineTemplateRow> {
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('targetTimeMinutes: $targetTimeMinutes, ')
+          ..write('durationMinutes: $durationMinutes, ')
           ..write('recurrenceKind: $recurrenceKind, ')
           ..write('weekdaysMask: $weekdaysMask, ')
           ..write('intervalDays: $intervalDays, ')
@@ -2066,6 +2122,17 @@ class $OneOffTasksTable extends OneOffTasks
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _durationMinutesMeta = const VerificationMeta(
+    'durationMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> durationMinutes = GeneratedColumn<int>(
+    'duration_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _reminderEnabledMeta = const VerificationMeta(
     'reminderEnabled',
   );
@@ -2149,6 +2216,7 @@ class $OneOffTasksTable extends OneOffTasks
     notes,
     scheduledDate,
     scheduledTimeMinutes,
+    durationMinutes,
     reminderEnabled,
     status,
     completedAtUtcMillis,
@@ -2213,6 +2281,15 @@ class $OneOffTasksTable extends OneOffTasks
         scheduledTimeMinutes.isAcceptableOrUnknown(
           data['scheduled_time_minutes']!,
           _scheduledTimeMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_minutes')) {
+      context.handle(
+        _durationMinutesMeta,
+        durationMinutes.isAcceptableOrUnknown(
+          data['duration_minutes']!,
+          _durationMinutesMeta,
         ),
       );
     }
@@ -2312,6 +2389,10 @@ class $OneOffTasksTable extends OneOffTasks
         DriftSqlType.int,
         data['${effectivePrefix}scheduled_time_minutes'],
       ),
+      durationMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_minutes'],
+      ),
       reminderEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}reminder_enabled'],
@@ -2356,6 +2437,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
   final String? notes;
   final String scheduledDate;
   final int? scheduledTimeMinutes;
+  final int? durationMinutes;
   final bool reminderEnabled;
   final String status;
   final int? completedAtUtcMillis;
@@ -2370,6 +2452,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
     this.notes,
     required this.scheduledDate,
     this.scheduledTimeMinutes,
+    this.durationMinutes,
     required this.reminderEnabled,
     required this.status,
     this.completedAtUtcMillis,
@@ -2390,6 +2473,9 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
     map['scheduled_date'] = Variable<String>(scheduledDate);
     if (!nullToAbsent || scheduledTimeMinutes != null) {
       map['scheduled_time_minutes'] = Variable<int>(scheduledTimeMinutes);
+    }
+    if (!nullToAbsent || durationMinutes != null) {
+      map['duration_minutes'] = Variable<int>(durationMinutes);
     }
     map['reminder_enabled'] = Variable<bool>(reminderEnabled);
     map['status'] = Variable<String>(status);
@@ -2419,6 +2505,9 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
       scheduledTimeMinutes: scheduledTimeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(scheduledTimeMinutes),
+      durationMinutes: durationMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMinutes),
       reminderEnabled: Value(reminderEnabled),
       status: Value(status),
       completedAtUtcMillis: completedAtUtcMillis == null && nullToAbsent
@@ -2449,6 +2538,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
       scheduledTimeMinutes: serializer.fromJson<int?>(
         json['scheduledTimeMinutes'],
       ),
+      durationMinutes: serializer.fromJson<int?>(json['durationMinutes']),
       reminderEnabled: serializer.fromJson<bool>(json['reminderEnabled']),
       status: serializer.fromJson<String>(json['status']),
       completedAtUtcMillis: serializer.fromJson<int?>(
@@ -2472,6 +2562,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
       'notes': serializer.toJson<String?>(notes),
       'scheduledDate': serializer.toJson<String>(scheduledDate),
       'scheduledTimeMinutes': serializer.toJson<int?>(scheduledTimeMinutes),
+      'durationMinutes': serializer.toJson<int?>(durationMinutes),
       'reminderEnabled': serializer.toJson<bool>(reminderEnabled),
       'status': serializer.toJson<String>(status),
       'completedAtUtcMillis': serializer.toJson<int?>(completedAtUtcMillis),
@@ -2489,6 +2580,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
     Value<String?> notes = const Value.absent(),
     String? scheduledDate,
     Value<int?> scheduledTimeMinutes = const Value.absent(),
+    Value<int?> durationMinutes = const Value.absent(),
     bool? reminderEnabled,
     String? status,
     Value<int?> completedAtUtcMillis = const Value.absent(),
@@ -2505,6 +2597,9 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
     scheduledTimeMinutes: scheduledTimeMinutes.present
         ? scheduledTimeMinutes.value
         : this.scheduledTimeMinutes,
+    durationMinutes: durationMinutes.present
+        ? durationMinutes.value
+        : this.durationMinutes,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
     status: status ?? this.status,
     completedAtUtcMillis: completedAtUtcMillis.present
@@ -2531,6 +2626,9 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
       scheduledTimeMinutes: data.scheduledTimeMinutes.present
           ? data.scheduledTimeMinutes.value
           : this.scheduledTimeMinutes,
+      durationMinutes: data.durationMinutes.present
+          ? data.durationMinutes.value
+          : this.durationMinutes,
       reminderEnabled: data.reminderEnabled.present
           ? data.reminderEnabled.value
           : this.reminderEnabled,
@@ -2562,6 +2660,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
           ..write('notes: $notes, ')
           ..write('scheduledDate: $scheduledDate, ')
           ..write('scheduledTimeMinutes: $scheduledTimeMinutes, ')
+          ..write('durationMinutes: $durationMinutes, ')
           ..write('reminderEnabled: $reminderEnabled, ')
           ..write('status: $status, ')
           ..write('completedAtUtcMillis: $completedAtUtcMillis, ')
@@ -2581,6 +2680,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
     notes,
     scheduledDate,
     scheduledTimeMinutes,
+    durationMinutes,
     reminderEnabled,
     status,
     completedAtUtcMillis,
@@ -2599,6 +2699,7 @@ class OneOffTaskRow extends DataClass implements Insertable<OneOffTaskRow> {
           other.notes == this.notes &&
           other.scheduledDate == this.scheduledDate &&
           other.scheduledTimeMinutes == this.scheduledTimeMinutes &&
+          other.durationMinutes == this.durationMinutes &&
           other.reminderEnabled == this.reminderEnabled &&
           other.status == this.status &&
           other.completedAtUtcMillis == this.completedAtUtcMillis &&
@@ -2615,6 +2716,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
   final Value<String?> notes;
   final Value<String> scheduledDate;
   final Value<int?> scheduledTimeMinutes;
+  final Value<int?> durationMinutes;
   final Value<bool> reminderEnabled;
   final Value<String> status;
   final Value<int?> completedAtUtcMillis;
@@ -2630,6 +2732,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
     this.notes = const Value.absent(),
     this.scheduledDate = const Value.absent(),
     this.scheduledTimeMinutes = const Value.absent(),
+    this.durationMinutes = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     this.status = const Value.absent(),
     this.completedAtUtcMillis = const Value.absent(),
@@ -2646,6 +2749,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
     this.notes = const Value.absent(),
     required String scheduledDate,
     this.scheduledTimeMinutes = const Value.absent(),
+    this.durationMinutes = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     required String status,
     this.completedAtUtcMillis = const Value.absent(),
@@ -2668,6 +2772,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
     Expression<String>? notes,
     Expression<String>? scheduledDate,
     Expression<int>? scheduledTimeMinutes,
+    Expression<int>? durationMinutes,
     Expression<bool>? reminderEnabled,
     Expression<String>? status,
     Expression<int>? completedAtUtcMillis,
@@ -2685,6 +2790,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
       if (scheduledDate != null) 'scheduled_date': scheduledDate,
       if (scheduledTimeMinutes != null)
         'scheduled_time_minutes': scheduledTimeMinutes,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (reminderEnabled != null) 'reminder_enabled': reminderEnabled,
       if (status != null) 'status': status,
       if (completedAtUtcMillis != null)
@@ -2707,6 +2813,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
     Value<String?>? notes,
     Value<String>? scheduledDate,
     Value<int?>? scheduledTimeMinutes,
+    Value<int?>? durationMinutes,
     Value<bool>? reminderEnabled,
     Value<String>? status,
     Value<int?>? completedAtUtcMillis,
@@ -2723,6 +2830,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
       notes: notes ?? this.notes,
       scheduledDate: scheduledDate ?? this.scheduledDate,
       scheduledTimeMinutes: scheduledTimeMinutes ?? this.scheduledTimeMinutes,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       status: status ?? this.status,
       completedAtUtcMillis: completedAtUtcMillis ?? this.completedAtUtcMillis,
@@ -2755,6 +2863,9 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
     }
     if (scheduledTimeMinutes.present) {
       map['scheduled_time_minutes'] = Variable<int>(scheduledTimeMinutes.value);
+    }
+    if (durationMinutes.present) {
+      map['duration_minutes'] = Variable<int>(durationMinutes.value);
     }
     if (reminderEnabled.present) {
       map['reminder_enabled'] = Variable<bool>(reminderEnabled.value);
@@ -2796,6 +2907,7 @@ class OneOffTasksCompanion extends UpdateCompanion<OneOffTaskRow> {
           ..write('notes: $notes, ')
           ..write('scheduledDate: $scheduledDate, ')
           ..write('scheduledTimeMinutes: $scheduledTimeMinutes, ')
+          ..write('durationMinutes: $durationMinutes, ')
           ..write('reminderEnabled: $reminderEnabled, ')
           ..write('status: $status, ')
           ..write('completedAtUtcMillis: $completedAtUtcMillis, ')
@@ -3993,6 +4105,7 @@ typedef $$RoutineTemplatesTableCreateCompanionBuilder =
       required String startDate,
       Value<String?> endDate,
       required int targetTimeMinutes,
+      Value<int?> durationMinutes,
       required String recurrenceKind,
       Value<int> weekdaysMask,
       Value<int?> intervalDays,
@@ -4012,6 +4125,7 @@ typedef $$RoutineTemplatesTableUpdateCompanionBuilder =
       Value<String> startDate,
       Value<String?> endDate,
       Value<int> targetTimeMinutes,
+      Value<int?> durationMinutes,
       Value<String> recurrenceKind,
       Value<int> weekdaysMask,
       Value<int?> intervalDays,
@@ -4064,6 +4178,11 @@ class $$RoutineTemplatesTableFilterComposer
 
   ColumnFilters<int> get targetTimeMinutes => $composableBuilder(
     column: $table.targetTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4152,6 +4271,11 @@ class $$RoutineTemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get recurrenceKind => $composableBuilder(
     column: $table.recurrenceKind,
     builder: (column) => ColumnOrderings(column),
@@ -4222,6 +4346,11 @@ class $$RoutineTemplatesTableAnnotationComposer
 
   GeneratedColumn<int> get targetTimeMinutes => $composableBuilder(
     column: $table.targetTimeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
     builder: (column) => column,
   );
 
@@ -4308,6 +4437,7 @@ class $$RoutineTemplatesTableTableManager
                 Value<String> startDate = const Value.absent(),
                 Value<String?> endDate = const Value.absent(),
                 Value<int> targetTimeMinutes = const Value.absent(),
+                Value<int?> durationMinutes = const Value.absent(),
                 Value<String> recurrenceKind = const Value.absent(),
                 Value<int> weekdaysMask = const Value.absent(),
                 Value<int?> intervalDays = const Value.absent(),
@@ -4325,6 +4455,7 @@ class $$RoutineTemplatesTableTableManager
                 startDate: startDate,
                 endDate: endDate,
                 targetTimeMinutes: targetTimeMinutes,
+                durationMinutes: durationMinutes,
                 recurrenceKind: recurrenceKind,
                 weekdaysMask: weekdaysMask,
                 intervalDays: intervalDays,
@@ -4344,6 +4475,7 @@ class $$RoutineTemplatesTableTableManager
                 required String startDate,
                 Value<String?> endDate = const Value.absent(),
                 required int targetTimeMinutes,
+                Value<int?> durationMinutes = const Value.absent(),
                 required String recurrenceKind,
                 Value<int> weekdaysMask = const Value.absent(),
                 Value<int?> intervalDays = const Value.absent(),
@@ -4361,6 +4493,7 @@ class $$RoutineTemplatesTableTableManager
                 startDate: startDate,
                 endDate: endDate,
                 targetTimeMinutes: targetTimeMinutes,
+                durationMinutes: durationMinutes,
                 recurrenceKind: recurrenceKind,
                 weekdaysMask: weekdaysMask,
                 intervalDays: intervalDays,
@@ -4780,6 +4913,7 @@ typedef $$OneOffTasksTableCreateCompanionBuilder =
       Value<String?> notes,
       required String scheduledDate,
       Value<int?> scheduledTimeMinutes,
+      Value<int?> durationMinutes,
       Value<bool> reminderEnabled,
       required String status,
       Value<int?> completedAtUtcMillis,
@@ -4797,6 +4931,7 @@ typedef $$OneOffTasksTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<String> scheduledDate,
       Value<int?> scheduledTimeMinutes,
+      Value<int?> durationMinutes,
       Value<bool> reminderEnabled,
       Value<String> status,
       Value<int?> completedAtUtcMillis,
@@ -4843,6 +4978,11 @@ class $$OneOffTasksTableFilterComposer
 
   ColumnFilters<int> get scheduledTimeMinutes => $composableBuilder(
     column: $table.scheduledTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4921,6 +5061,11 @@ class $$OneOffTasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get reminderEnabled => $composableBuilder(
     column: $table.reminderEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -4985,6 +5130,11 @@ class $$OneOffTasksTableAnnotationComposer
 
   GeneratedColumn<int> get scheduledTimeMinutes => $composableBuilder(
     column: $table.scheduledTimeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationMinutes => $composableBuilder(
+    column: $table.durationMinutes,
     builder: (column) => column,
   );
 
@@ -5059,6 +5209,7 @@ class $$OneOffTasksTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String> scheduledDate = const Value.absent(),
                 Value<int?> scheduledTimeMinutes = const Value.absent(),
+                Value<int?> durationMinutes = const Value.absent(),
                 Value<bool> reminderEnabled = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int?> completedAtUtcMillis = const Value.absent(),
@@ -5074,6 +5225,7 @@ class $$OneOffTasksTableTableManager
                 notes: notes,
                 scheduledDate: scheduledDate,
                 scheduledTimeMinutes: scheduledTimeMinutes,
+                durationMinutes: durationMinutes,
                 reminderEnabled: reminderEnabled,
                 status: status,
                 completedAtUtcMillis: completedAtUtcMillis,
@@ -5091,6 +5243,7 @@ class $$OneOffTasksTableTableManager
                 Value<String?> notes = const Value.absent(),
                 required String scheduledDate,
                 Value<int?> scheduledTimeMinutes = const Value.absent(),
+                Value<int?> durationMinutes = const Value.absent(),
                 Value<bool> reminderEnabled = const Value.absent(),
                 required String status,
                 Value<int?> completedAtUtcMillis = const Value.absent(),
@@ -5106,6 +5259,7 @@ class $$OneOffTasksTableTableManager
                 notes: notes,
                 scheduledDate: scheduledDate,
                 scheduledTimeMinutes: scheduledTimeMinutes,
+                durationMinutes: durationMinutes,
                 reminderEnabled: reminderEnabled,
                 status: status,
                 completedAtUtcMillis: completedAtUtcMillis,

@@ -38,11 +38,18 @@ browser.
 ## Features
 
 - Today agenda combines recurring routine occurrences and one-off tasks, with
-  complete, skip, snooze, reschedule, and delete actions where applicable.
+  complete, skip, snooze, reschedule, edit, and delete actions where applicable.
+- Today, Calendar, and Routines use the same editor for task details, schedule,
+  duration, recurrence, and task type. Converting a one-time task to a routine
+  carries its status to the first occurrence; converting a routine to a task
+  stops the series, keeps its history, and carries over the selected occurrence
+  status.
 - Calendar provides a Monday-to-Sunday schedule with configurable visible
   hours, defaulting to 6:00 AM through 10:00 PM. Change the range in Settings;
   it is saved to the signed-in account and syncs across that account's devices.
-  On phones, select a day to see its schedule; on wider screens, view the full
+  Optionally set a duration in minutes for a timed task or routine to display it
+  as a proportional time block; durations cannot extend past midnight. On
+  phones, select a day to see its schedule; on wider screens, view the full
   week. Add a task or recurring routine from a date or time slot to prefill it.
 - Routines support daily, selected-weekday, and custom-interval recurrence.
 - Drift is the local source of truth on Android and Web, so agenda reads and
@@ -140,6 +147,11 @@ separate app.
 GitHub Actions runs checks on pushes and pull requests to `main`. An Android
 release is created only when a new `vMAJOR.MINOR.PATCH` tag is pushed. Before
 tagging a release:
+
+The checks workflow also builds and uploads a single, optimized ARM64 Release
+APK for testing. That artifact uses a temporary test signing key and is not for
+distribution. Production releases are built and signed with the configured
+release keystore; the workflow publishes only the ARM64 APK.
 
 1. Manually update `version` in `pubspec.yaml`, for example `1.0.0+1`.
    The semantic version must match the tag, and the build number after `+` must

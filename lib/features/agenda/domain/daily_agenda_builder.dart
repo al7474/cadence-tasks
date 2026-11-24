@@ -50,8 +50,10 @@ final class DailyAgendaBuilder {
           kind: AgendaItemKind.routine,
           scheduledDate: state?.rescheduledDate ?? forDate,
           scheduledTime: state?.rescheduledTime ?? routine.targetTime,
+          durationMinutes: routine.durationMinutes,
           status: state?.status ?? TaskStatus.pending,
           reminderEnabled: routine.reminderEnabled,
+          completedAtUtc: state?.completedAtUtc,
           snoozedUntilUtc: state?.snoozedUntilUtc,
         ),
       );
@@ -76,8 +78,10 @@ final class DailyAgendaBuilder {
           kind: AgendaItemKind.routine,
           scheduledDate: forDate,
           scheduledTime: state.rescheduledTime ?? routine.targetTime,
+          durationMinutes: routine.durationMinutes,
           status: state.status,
           reminderEnabled: routine.reminderEnabled,
+          completedAtUtc: state.completedAtUtc,
           snoozedUntilUtc: state.snoozedUntilUtc,
         ),
       );
@@ -97,8 +101,10 @@ final class DailyAgendaBuilder {
           kind: AgendaItemKind.oneOff,
           scheduledDate: task.scheduledDate,
           scheduledTime: task.scheduledTime,
+          durationMinutes: task.durationMinutes,
           status: task.status,
           reminderEnabled: task.reminderEnabled,
+          completedAtUtc: task.completedAtUtc,
           snoozedUntilUtc: task.snoozedUntilUtc,
         ),
       );

@@ -15,6 +15,8 @@ final class AgendaItem {
     required this.status,
     required this.reminderEnabled,
     this.scheduledTime,
+    this.durationMinutes,
+    this.completedAtUtc,
     this.snoozedUntilUtc,
   });
 
@@ -25,6 +27,8 @@ final class AgendaItem {
   final AgendaItemKind kind;
   final LocalDate scheduledDate;
   final LocalTime? scheduledTime;
+  final int? durationMinutes;
+  final DateTime? completedAtUtc;
   final TaskStatus status;
   final bool reminderEnabled;
   final DateTime? snoozedUntilUtc;

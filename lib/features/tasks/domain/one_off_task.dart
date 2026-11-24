@@ -13,6 +13,7 @@ final class OneOffTask {
     required this.reminderEnabled,
     this.notes,
     this.scheduledTime,
+    this.durationMinutes,
     this.completedAtUtc,
     this.snoozedUntilUtc,
   });
@@ -22,6 +23,7 @@ final class OneOffTask {
   final String? notes;
   final LocalDate scheduledDate;
   final LocalTime? scheduledTime;
+  final int? durationMinutes;
   final bool reminderEnabled;
   final TaskStatus status;
   final DateTime? completedAtUtc;
@@ -32,6 +34,7 @@ final class OneOffTask {
     required String title,
     required LocalDate scheduledDate,
     LocalTime? scheduledTime,
+    int? durationMinutes,
     bool reminderEnabled = false,
     String? notes,
     TaskStatus status = TaskStatus.pending,
@@ -51,6 +54,16 @@ final class OneOffTask {
     if (reminderEnabled && scheduledTime == null) {
       return const FailureResult<OneOffTask>(
         ValidationFailure('A reminder requires a scheduled time.'),
+      );
+    }
+    if (durationMinutes != null &&
+        (durationMinutes < 1 ||
+            scheduledTime == null ||
+            scheduledTime.minutesSinceMidnight + durationMinutes > 1440)) {
+      return const FailureResult<OneOffTask>(
+        ValidationFailure(
+          'A task duration requires a start time and must end before midnight.',
+        ),
       );
     }
     if ((status == TaskStatus.completed) != (completedAtUtc != null)) {
@@ -77,6 +90,7 @@ final class OneOffTask {
         notes: notes,
         scheduledDate: scheduledDate,
         scheduledTime: scheduledTime,
+        durationMinutes: durationMinutes,
         reminderEnabled: reminderEnabled,
         status: status,
         completedAtUtc: completedAtUtc,

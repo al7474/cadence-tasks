@@ -71,6 +71,7 @@ void main() {
         title: 'Local title',
         startDate: date(2026, 11, 21),
         targetTime: time(8, 0),
+        durationMinutes: 60,
       );
       await localRepository.save(localRoutine);
 
@@ -79,6 +80,7 @@ void main() {
         title: 'Remote title',
         startDate: localRoutine.startDate,
         targetTime: localRoutine.targetTime,
+        durationMinutes: 90,
       );
       final remotePayload = DriftRecordMappers.routinePayload(
         routine: remoteRoutine,
@@ -96,6 +98,7 @@ void main() {
 
       final saved = valueOf(await localRepository.getAllRoutines());
       expect(saved.single.title, 'Remote title');
+      expect(saved.single.durationMinutes, 90);
       expect(await syncRepository.pendingMutations(userId), isEmpty);
     },
   );

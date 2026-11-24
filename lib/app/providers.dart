@@ -10,6 +10,7 @@ import 'package:cadence_tasks/data/local/drift/drift_daily_agenda_repository.dar
 import 'package:cadence_tasks/data/local/drift/drift_one_off_task_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_routine_repository.dart';
 import 'package:cadence_tasks/data/local/drift/drift_sync_repository.dart';
+import 'package:cadence_tasks/data/local/drift/drift_task_type_conversion_repository.dart';
 import 'package:cadence_tasks/data/remote/firebase/firebase_authentication_repository.dart';
 import 'package:cadence_tasks/data/remote/firebase/firebase_sync_coordinator.dart';
 import 'package:cadence_tasks/features/agenda/domain/daily_agenda.dart';
@@ -24,6 +25,7 @@ import 'package:cadence_tasks/features/routines/domain/repositories/routine_repo
 import 'package:cadence_tasks/features/routines/domain/routine_template.dart';
 import 'package:cadence_tasks/features/synchronization/domain/sync_coordinator.dart';
 import 'package:cadence_tasks/features/tasks/domain/repositories/one_off_task_repository.dart';
+import 'package:cadence_tasks/features/tasks/domain/task_type_conversion_repository.dart';
 import 'package:cadence_tasks/infrastructure/firebase/firebase_bootstrap.dart';
 import 'package:cadence_tasks/infrastructure/notifications/local_notification_scheduler.dart';
 import 'package:cadence_tasks/infrastructure/notifications/reminder_reconciler.dart';
@@ -96,6 +98,14 @@ final oneOffTaskRepositoryProvider = Provider<OneOffTaskRepository>((ref) {
     userId: ref.watch(activeUserIdProvider),
   );
 });
+
+final taskTypeConversionRepositoryProvider =
+    Provider<TaskTypeConversionRepository>((ref) {
+      return DriftTaskTypeConversionRepository(
+        ref.watch(appDatabaseProvider),
+        userId: ref.watch(activeUserIdProvider),
+      );
+    });
 
 final notificationSchedulerProvider = Provider<NotificationScheduler>((ref) {
   return LocalNotificationScheduler();

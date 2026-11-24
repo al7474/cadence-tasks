@@ -110,9 +110,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       FirebaseOfflineMode() => const Card(
         child: ListTile(
           leading: Icon(Icons.cloud_off_outlined),
-          title: Text('Offline-only mode'),
+          title: Text('On-device storage'),
           subtitle: Text(
-            'Cloud sync is not configured. Your data stays on this device.',
+            'Your tasks and routines are saved on this device. Cloud sync is '
+            'unavailable.',
           ),
         ),
       ),
@@ -120,7 +121,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: ListTile(
           leading: const Icon(Icons.cloud_off_outlined),
           title: const Text('Cloud sync unavailable'),
-          subtitle: Text(message),
+          subtitle: Text(
+            'Your changes are still saved on this device. $message',
+          ),
         ),
       ),
       FirebaseReady() => authState.when(
@@ -220,7 +223,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _signIn() async {
     final repository = ref.read(authenticationRepositoryProvider);
     if (repository == null) {
-      _showError('Firebase is not configured.');
+      _showError('Google sign-in is unavailable.');
       return;
     }
 
@@ -247,7 +250,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _signOut() async {
     final repository = ref.read(authenticationRepositoryProvider);
     if (repository == null) {
-      _showError('Firebase is not configured.');
+      _showError('Account access is unavailable.');
       return;
     }
 
@@ -279,7 +282,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: const Text(
           'This permanently deletes all tasks, routines, and pending changes '
           'saved in this app on this device or browser for every account. It '
-          'does not delete data stored in Firebase.',
+          'does not delete data stored through cloud sync.',
         ),
         actions: [
           TextButton(
@@ -385,7 +388,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final repository = ref.read(authenticationRepositoryProvider);
     if (repository == null) {
-      _showError('Firebase is not configured.');
+      _showError('Account management is unavailable.');
       return;
     }
 

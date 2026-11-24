@@ -93,6 +93,7 @@ void main() {
         title: 'Daily routine',
         startDate: originalDate,
         targetTime: time(10, 0),
+        durationMinutes: 45,
       );
       final movedOccurrence = occurrenceState(
         routineId: dailyRoutine.id,
@@ -121,6 +122,10 @@ void main() {
       expect(originalAgenda.upcoming, isEmpty);
       expect(targetAgenda.upcoming, hasLength(2));
       expect(targetAgenda.upcoming.first.scheduledTime, time(9, 30));
+      expect(
+        targetAgenda.upcoming.map((item) => item.durationMinutes).toSet(),
+        {45},
+      );
       expect(targetAgenda.upcoming.map((item) => item.id).toSet(), {
         'routine:routine:2026-11-20',
         'routine:routine:2026-11-21',
@@ -200,6 +205,7 @@ void main() {
             title: 'Routine',
             startDate: today,
             targetTime: time(8, 0),
+            durationMinutes: 90,
           ),
         ],
         occurrenceStates: const [],
@@ -209,12 +215,15 @@ void main() {
             title: 'Task',
             scheduledDate: today,
             scheduledTime: time(9, 0),
+            durationMinutes: 45,
           ),
         ],
       );
 
       expect(agenda.upcoming[0].kind, AgendaItemKind.routine);
+      expect(agenda.upcoming[0].durationMinutes, 90);
       expect(agenda.upcoming[1].kind, AgendaItemKind.oneOff);
+      expect(agenda.upcoming[1].durationMinutes, 45);
     });
   });
 }
