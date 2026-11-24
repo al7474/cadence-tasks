@@ -144,14 +144,12 @@ The permanent Android application ID is `com.al7474.cadence_tasks`. Do not
 change it after distributing a release; Android treats a different ID as a
 separate app.
 
-GitHub Actions runs checks on pushes and pull requests to `main`. An Android
-release is created only when a new `vMAJOR.MINOR.PATCH` tag is pushed. Before
-tagging a release:
-
-The checks workflow also builds and uploads a single, optimized ARM64 Release
-APK for testing. That artifact uses a temporary test signing key and is not for
-distribution. Production releases are built and signed with the configured
-release keystore; the workflow publishes only the ARM64 APK.
+GitHub Actions runs analysis, Flutter tests, and Firestore rules tests on pushes
+and pull requests to `main`. These checks do not build APKs. The optimized
+ARM64 Release APK is built only when the Android release workflow is triggered
+by a new `vMAJOR.MINOR.PATCH` tag or manually for an existing tag. Production
+releases are signed with the configured release keystore and publish only the
+ARM64 APK. Before tagging a release:
 
 1. Manually update `version` in `pubspec.yaml`, for example `1.0.0+1`.
    The semantic version must match the tag, and the build number after `+` must
