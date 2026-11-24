@@ -178,6 +178,7 @@ jobs:
           build_tools="${ANDROID_HOME}/build-tools/$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n 1)"
           package_name="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE "s/^package: name='([^']+)'.*/\1/p")"
           native_abis="$("${build_tools}/aapt" dump badging "${apk_path}" | sed -nE 's/^native-code: (.*)$/\1/p')"
+          resources="$("${build_tools}/aapt" dump resources "${apk_path}")"
           if ! signer_report="$("${build_tools}/apksigner" verify --print-certs "${apk_path}" 2>&1)"; then
             echo "::error::apksigner could not verify the ARM64 APK."
             printf '%s\n' "${signer_report}"
@@ -187,6 +188,10 @@ jobs:
           expected_sha1="98687310a9f02058e367856e2361a4bcaa4a14f0"
           if [[ "${package_name}" != "com.al7474.cadence_tasks" || "${native_abis}" != "'arm64-v8a'" ]]; then
             echo "::error::The release APK must be Cadence Tasks for ARM64 only."
+            exit 1
+          fi
+          if [[ "${resources}" != *ic_notification* ]]; then
+            echo "::error::The release APK is missing the Android notification drawable."
             exit 1
           fi
           if [[ -z "${signer_sha1}" ]]; then
